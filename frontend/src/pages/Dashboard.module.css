@@ -1,0 +1,45 @@
+.page { max-width:1100px; }
+.pageTitle { font-size:24px; font-weight:700; color:#1e3a5f; margin:0 0 24px; }
+.welcome { display:flex; justify-content:space-between; align-items:center; background:#fff; border-radius:12px; padding:24px 28px; margin-bottom:24px; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.welcome h1 { font-size:22px; color:#1e3a5f; margin:0 0 4px; }
+.welcome p { color:#666; margin:0; font-size:14px; }
+.statsRow { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:16px; margin-bottom:28px; }
+.stat { background:#fff; border-radius:10px; padding:18px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.06); display:flex; flex-direction:column; gap:4px; }
+.statNum { font-size:32px; font-weight:700; color:#1e3a5f; }
+.stat span:last-child { font-size:12px; color:#888; }
+.sectionTitle { font-size:18px; font-weight:700; color:#1e3a5f; margin:0 0 16px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:20px; }
+.empty { background:#fff; border-radius:12px; padding:40px; text-align:center; color:#888; }
+.ctaBtn { padding:10px 20px; background:#1e3a5f; color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; text-decoration:none; display:inline-block; transition:background .2s; }
+.ctaBtn:hover { background:#2e6da4; }
+.enrollBtn { padding:7px 14px; background:#27ae60; color:#fff; border:none; border-radius:6px; font-size:13px; cursor:pointer; transition:background .2s; }
+.enrollBtn:hover { background:#219a52; }
+.btnSecondary { padding:7px 14px; background:#f0f4fa; color:#1e3a5f; border:1px solid #dde; border-radius:6px; font-size:13px; cursor:pointer; text-decoration:none; display:inline-block; transition:all .2s; }
+.btnSecondary:hover { background:#dde8f5; }
+.btnGreen { padding:6px 12px; background:#27ae60; color:#fff; border:none; border-radius:6px; font-size:12px; cursor:pointer; margin-right:6px; }
+.btnRed { padding:6px 12px; background:#e74c3c; color:#fff; border:none; border-radius:6px; font-size:12px; cursor:pointer; }
+.filters { display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+.search { flex:1; min-width:200px; padding:9px 14px; border:1.5px solid #ddd; border-radius:8px; font-size:14px; outline:none; }
+.search:focus { border-color:#2e6da4; }
+.filters select { padding:9px 14px; border:1.5px solid #ddd; border-radius:8px; font-size:14px; background:#fff; outline:none; }
+.toast { background:#1e3a5f; color:#fff; padding:12px 20px; border-radius:8px; margin-bottom:16px; font-size:14px; }
+.tableWrap { background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.table { width:100%; border-collapse:collapse; font-size:14px; }
+.table th { background:#1e3a5f; color:#fff; padding:12px 16px; text-align:left; font-weight:600; }
+.table td { padding:12px 16px; border-bottom:1px solid #f0f0f0; }
+.table tr:last-child td { border-bottom:none; }
+.table tr:hover td { background:#f8fafd; }
+.badge { background:#f0f4fa; color:#1e3a5f; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600; }
+.roleBadge { padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600; color:#fff; }
+.active { color:#27ae60; font-weight:600; }
+.inactive { color:#e74c3c; font-weight:600; }
+.error { background:#fee; border:1px solid #fcc; color:#c00; padding:10px 14px; border-radius:8px; margin-bottom:16px; font-size:14px; }
+.formCard { background:#fff; border-radius:12px; padding:32px; max-width:700px; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.formField { margin-bottom:18px; display:flex; flex-direction:column; gap:6px; }
+.formField label { font-size:13px; font-weight:600; color:#555; }
+.formField input, .formField textarea, .formField select { padding:10px 14px; border:1.5px solid #ddd; border-radius:8px; font-size:14px; outline:none; font-family:inherit; }
+.formField input:focus, .formField textarea:focus, .formField select:focus { border-color:#2e6da4; }
+.formRow { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.checkGroup { display:flex; flex-wrap:wrap; gap:10px; }
+.checkItem { display:flex; align-items:center; gap:6px; font-size:14px; cursor:pointer; }
+.formActions { display:flex; gap:12px; justify-content:flex-end; margin-top:8px; }

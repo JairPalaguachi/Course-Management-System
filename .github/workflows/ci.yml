@@ -25,7 +25,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U postgres -d course_management_test"
+          --health-cmd="pg_isready -U test_user -d course_management_test"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
@@ -41,8 +41,8 @@ jobs:
 
       DB_ENGINE: django.db.backends.postgresql
       DB_NAME: course_management_test
-      DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_USER: test_user
+      DB_PASSWORD: test_password
       DB_HOST: localhost
       DB_PORT: 5432
 

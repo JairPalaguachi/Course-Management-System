@@ -12,8 +12,23 @@ on:
 
 jobs:
   backend:
-    name: Backend - Django
+    name: Backend - Django with PostgreSQL
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: course_management_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d course_management_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     defaults:
       run:
@@ -23,6 +38,13 @@ jobs:
       SECRET_KEY: test-secret-key
       DEBUG: "True"
       ALLOWED_HOSTS: localhost,127.0.0.1
+
+      DB_ENGINE: django.db.backends.postgresql
+      DB_NAME: course_management_test
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: localhost
+      DB_PORT: 5432
 
     steps:
       - name: Checkout repository
@@ -43,6 +65,10 @@ jobs:
       - name: Check Django project
         run: |
           python manage.py check
+
+      - name: Run migrations
+        run: |
+          python manage.py migrate
 
       - name: Run backend tests
         run: |
@@ -78,3 +104,4 @@ jobs:
 
       - name: Build frontend
         run: npm run build
+

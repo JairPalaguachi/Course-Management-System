@@ -3,7 +3,10 @@ import Home from "../pages/Home";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Courses from "../pages/Courses";
-import Dashboard from "../pages/Dashboard";
+import StudentDashboard from "../pages/StudentDashboard";
+import TutorDashboard from "../pages/TutorDashboard";
+import AdminDashboard from "../pages/AdminDashboard";
+import ProtectedRoute from "./ProtectedRoute";
 
 function AppRouter() {
     return (
@@ -13,7 +16,33 @@ function AppRouter() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/courses" element={<Courses />} />
-                <Route path="/dashboard" element={<Dashboard />} />
+                {/* dashboards por rol */}
+                <Route
+                    path="/student/dashboard"
+                    element={
+                        <ProtectedRoute allowedRole="student">
+                            <StudentDashboard />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/tutor/dashboard"
+                    element={
+                        <ProtectedRoute allowedRole="tutor">
+                            <TutorDashboard />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/admin/dashboard"
+                    element={
+                        <ProtectedRoute allowedRole="admin">
+                            <AdminDashboard />
+                        </ProtectedRoute>
+                    }
+                />
             </Routes>
         </BrowserRouter>
     );

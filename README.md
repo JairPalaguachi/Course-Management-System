@@ -39,8 +39,9 @@ El sistema permitirá administrar cursos educativos mediante distintos roles de 
 
 ### Base de datos
 
-* SQLite para desarrollo inicial
-* PostgreSQL para etapas posteriores del proyecto
+* PostgreSQL
+* Docker
+* Docker Compose
 
 ### Control de versiones e integración
 
@@ -74,13 +75,67 @@ Course-Management-System/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml
+├── docker-compose.yml
 ├── .gitignore
 └── README.md
 ```
 
 ---
 
+## Base de datos con PostgreSQL y Docker
+
+El proyecto utiliza **PostgreSQL mediante Docker Compose**.
+El archivo `docker-compose.yml` levanta un contenedor de PostgreSQL con una base de datos local para desarrollo.
+
+### Levantar PostgreSQL
+
+Desde la raíz del proyecto:
+
+```bash
+docker compose up -d
+```
+
+Verificar que el contenedor esté ejecutándose:
+
+```bash
+docker ps
+```
+
+Debería aparecer un contenedor similar a:
+
+```text
+cms_postgres
+```
+
+Ver logs del contenedor:
+
+```bash
+docker compose logs db
+```
+
+Detener PostgreSQL:
+
+```bash
+docker compose down
+```
+
+Detener PostgreSQL y eliminar el volumen de datos:
+
+```bash
+docker compose down -v
+```
+
+> Nota: `docker compose down -v` elimina la base de datos local. Se recomienda usarlo solo cuando sea necesario reiniciar completamente la base de datos de desarrollo.
+
+---
+
 ## Instalación del backend
+
+Antes de ejecutar el backend, asegúrate de que Docker Desktop esté abierto y PostgreSQL esté levantado:
+
+```bash
+docker compose up -d
+```
 
 Entrar a la carpeta del backend:
 
@@ -104,6 +159,12 @@ Instalar dependencias:
 
 ```bash
 pip install -r requirements.txt
+```
+
+Crear migraciones, si se agregaron o modificaron modelos:
+
+```bash
+python manage.py makemigrations
 ```
 
 Ejecutar migraciones:
@@ -135,6 +196,85 @@ El backend se ejecutará por defecto en:
 ```text
 http://localhost:8000/
 ```
+
+Endpoint de prueba del backend:
+
+```text
+http://localhost:8000/api/health/
+```
+
+---
+
+## Panel administrativo de Django
+
+Para acceder al panel administrativo, primero crear un superusuario:
+
+```bash
+python manage.py createsuperuser
+```
+
+Luego ejecutar el servidor:
+
+```bash
+python manage.py runserver
+```
+
+Abrir en el navegador:
+
+```text
+http://localhost:8000/admin/
+```
+
+Desde el panel administrativo se pueden gestionar los modelos principales del sistema:
+
+* Usuarios
+* Categorías
+* Cursos
+* Inscripciones
+
+---
+
+## Modelos principales de base de datos
+
+El sistema cuenta con los siguientes modelos principales:
+
+### User
+
+Modelo personalizado de usuario basado en `AbstractUser`.
+
+Roles disponibles:
+
+* `student`: estudiante
+* `tutor`: tutor
+* `admin`: administrador
+
+### Category
+
+Modelo opcional para clasificar cursos por categoría.
+
+### Course
+
+Modelo principal para representar los cursos del sistema.
+
+Estados disponibles del curso:
+
+* `draft`: borrador
+* `pending`: pendiente de aprobación
+* `published`: publicado
+* `rejected`: rechazado
+
+Cada curso está asociado a un tutor y puede pertenecer a una categoría.
+
+### Enrollment
+
+Modelo que representa la inscripción de un estudiante a un curso.
+
+Permite relacionar:
+
+* estudiante
+* curso
+* estado de inscripción
+* fecha de inscripción
 
 ---
 
@@ -223,7 +363,7 @@ El sistema se divide en los siguientes módulos:
 
 ## Flujo de ramas
 
-El proyecto utilizará las siguientes ramas principales:
+El proyecto utiliza las siguientes ramas principales:
 
 * `main`: rama estable del proyecto.
 * `develop`: rama de integración para los avances del equipo.
@@ -240,22 +380,25 @@ feature/sprint1-login
 feature/sprint2-tutor-course-create
 feature/sprint3-course-approval
 feature/sprint4-course-enrollment
+feature/database-models
 fix/login-validation-error
 docs/api-endpoints
 setup/github-actions-ci
+setup/backend-base
 ```
 
 ---
 
 ## Convención de commits
 
-Se utilizará una convención simple basada en el tipo de cambio realizado.
+Se utiliza una convención simple basada en el tipo de cambio realizado.
 
 Ejemplos:
 
 ```bash
 feat: add student registration endpoint
 feat: create public course catalog page
+feat: define core database models
 fix: correct login validation error
 docs: update API endpoints documentation
 style: format frontend components
@@ -278,6 +421,38 @@ Tipos sugeridos:
 
 ## Comandos útiles
 
+### Docker y PostgreSQL
+
+Levantar PostgreSQL:
+
+```bash
+docker compose up -d
+```
+
+Ver contenedores activos:
+
+```bash
+docker ps
+```
+
+Ver logs de PostgreSQL:
+
+```bash
+docker compose logs db
+```
+
+Detener contenedores:
+
+```bash
+docker compose down
+```
+
+Eliminar contenedores y volumen de la base de datos:
+
+```bash
+docker compose down -v
+```
+
 ### Backend
 
 Verificar configuración de Django:
@@ -286,10 +461,28 @@ Verificar configuración de Django:
 python manage.py check
 ```
 
+Crear migraciones:
+
+```bash
+python manage.py makemigrations
+```
+
+Ejecutar migraciones:
+
+```bash
+python manage.py migrate
+```
+
 Ejecutar pruebas:
 
 ```bash
 python manage.py test
+```
+
+Crear superusuario:
+
+```bash
+python manage.py createsuperuser
 ```
 
 Formatear código con Black:
@@ -342,13 +535,14 @@ npm run format
 
 El proyecto utiliza GitHub Actions para validar automáticamente el backend y el frontend antes de integrar cambios a `develop` o `main`.
 
-El workflow ejecuta:
+El workflow ejecuta validaciones para el backend usando un servicio temporal de PostgreSQL dentro de GitHub Actions.
 
 ### Backend
 
 ```bash
 pip install -r requirements.txt
 python manage.py check
+python manage.py migrate
 python manage.py test
 ```
 

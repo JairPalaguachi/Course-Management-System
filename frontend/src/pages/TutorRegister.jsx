@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { registerTutor } from '../services/authService';
 
 import {
     Box,
@@ -13,49 +14,51 @@ import {
     InputAdornment,
     IconButton,
 } from "@mui/material";
-import LockOpenIcon from "@mui/icons-material/LockOpen";
+import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import PersonIcon from "@mui/icons-material/Person";
+import EmailIcon from "@mui/icons-material/Email";
 import LockIcon from "@mui/icons-material/Lock";
+import BadgeIcon from "@mui/icons-material/Badge";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
-import api from "../services/api";
-import { useAuth } from "../context/useAuth";
-
-function Login() {
+function TutorRegister() {
     const navigate = useNavigate();
-    const { login } = useAuth();
 
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
+    const [formData, setFormData] = useState({
+        username: '',
+        email: '',
+        first_name: '',
+        last_name: '',
+        password: '',
+        password_confirm: '',
+    });
+
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError("");
+    const handleChange = (event) => {
+        const { name, value } = event.target;
+        setFormData({ ...formData, [name]: value });
+    };
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        setError('');
+        setSuccess('');
 
         try {
-            const response = await api.post("/auth/login/", {
-                username,
-                password,
-            });
-            
-            const { access, refresh, user } = response.data;
-
-            login(user, access, refresh);
-
-            if (user.role === "student") {
-                navigate("/student/dashboard");
-            } else if (user.role === "tutor") {
-                navigate("/tutor/dashboard");
-            } else if (user.role === "admin") {
-                navigate("/admin/dashboard");
-            }
+            await registerTutor(formData);
+            setSuccess('Tutor registrado exitosamente. Redirigiendo al login...');
+            setTimeout(() => navigate('/login'), 1200);
         } catch (err) {
-            console.log(err.response?.data);
-            setError("Credenciales inválidas. Por favor, intenta de nuevo.");
+            if (err.response?.data) {
+                setError(JSON.stringify(err.response.data));
+            } else {
+                setError('Ocurrió un error al registrar el tutor.');
+            }
         }
     };
 
@@ -76,11 +79,11 @@ function Login() {
                 justifyContent: "space-between",
             }}
         >
-            {/* Botón flotante para regresar al Home */}
+            {/* Botón para regresar a la selección de Rol */}
             <Box sx={{ position: "absolute", top: 24, left: 24, zIndex: 10 }}>
                 <Button
                     startIcon={<ArrowBackIcon />}
-                    onClick={() => navigate("/")}
+                    onClick={() => navigate("/register")}
                     sx={{
                         color: "#10423f",
                         fontWeight: 600,
@@ -88,11 +91,11 @@ function Login() {
                         "&:hover": { backgroundColor: "rgba(16,66,63,0.08)" },
                     }}
                 >
-                    Volver al inicio
+                    Volver atrás
                 </Button>
             </Box>
 
-            {/* Círculos decorativos de fondo */}
+            {/* Círculos decorativos idénticos al ecosistema visual */}
             <Box sx={{
                 position: "absolute", top: -100, right: -100,
                 width: 400, height: 400, borderRadius: "50%",
@@ -104,19 +107,19 @@ function Login() {
                 background: "rgba(16,66,63,0.04)", pointerEvents: "none",
             }} />
 
-            {/* Contenedor de la Tarjeta */}
-            <Container maxWidth="sm" sx={{ pt: { xs: 12, md: 16 }, pb: 6, position: "relative", zIndex: 1 }}>
+            {/* Contenedor del Formulario */}
+            <Container maxWidth="sm" sx={{ pt: { xs: 10, md: 12 }, pb: 6, position: "relative", zIndex: 1 }}>
                 <Paper
                     elevation={0}
                     sx={{
-                        p: { xs: 4, sm: 5 },
+                        p: { xs: 3, sm: 5 },
                         borderRadius: 4,
                         border: "1px solid #e2e8f0",
                         backgroundColor: "#ffffff",
                         boxShadow: "0 12px 40px rgba(15,118,110,0.08)",
                     }}
                 >
-                    {/* Encabezado / Identidad de marca */}
+                    {/* Encabezado del Perfil Tutor */}
                     <Box sx={{ textAlign: "center", mb: 4 }}>
                         <Box sx={{
                             display: "inline-flex", alignItems: "center", justifyContent: "center",
@@ -125,32 +128,37 @@ function Login() {
                             mb: 2,
                             boxShadow: "0 4px 14px rgba(10,46,43,0.25)"
                         }}>
-                            <LockOpenIcon sx={{ fontSize: 28, color: "#fff" }} />
+                            <WorkspacePremiumIcon sx={{ fontSize: 28, color: "#fff" }} />
                         </Box>
                         <Typography variant="h4" sx={{ fontWeight: 800, color: "#10423f", mb: 1 }}>
-                            ¡Hola de nuevo!
+                            Registro de Tutor
                         </Typography>
                         <Typography variant="body2" sx={{ color: "#64748b" }}>
-                            Ingresa tus credenciales para acceder a tu panel de control
+                            Crea tu perfil docente y comienza a impartir tus cursos verificados
                         </Typography>
                     </Box>
 
-                    {/* Alerta de Error */}
+                    {/* Alertas de Feedback */}
                     {error && (
-                        <Alert severity="error" sx={{ mb: 3, borderRadius: 2.5 }}>
+                        <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
                             {error}
                         </Alert>
                     )}
+                    {success && (
+                        <Alert severity="success" sx={{ mb: 3, borderRadius: 2 }}>
+                            {success}
+                        </Alert>
+                    )}
 
-                    {/* Formulario de Login */}
+                    {/* Formulario */}
                     <form onSubmit={handleSubmit}>
                         <Stack spacing={2.5}>
                             <TextField
                                 fullWidth
                                 label="Nombre de usuario"
-                                placeholder="Ingresa tu usuario"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
+                                name="username"
+                                value={formData.username}
+                                onChange={handleChange}
                                 required
                                 InputProps={{
                                     startAdornment: (
@@ -164,11 +172,67 @@ function Login() {
 
                             <TextField
                                 fullWidth
-                                type={showPassword ? "text" : "password"}
+                                label="Correo electrónico"
+                                name="email"
+                                type="email"
+                                placeholder="ejemplo@correo.com"
+                                value={formData.email}
+                                onChange={handleChange}
+                                required
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <EmailIcon sx={{ color: "#0f766e" }} />
+                                        </InputAdornment>
+                                    ),
+                                }}
+                                sx={textFieldStyles}
+                            />
+
+                            {/* Fila colapsable: Nombre y Apellido juntos en escritorio */}
+                            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                                <TextField
+                                    fullWidth
+                                    label="Nombre"
+                                    name="first_name"
+                                    value={formData.first_name}
+                                    onChange={handleChange}
+                                    required
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <BadgeIcon sx={{ color: "#0f766e" }} />
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                    sx={textFieldStyles}
+                                />
+
+                                <TextField
+                                    fullWidth
+                                    label="Apellido"
+                                    name="last_name"
+                                    value={formData.last_name}
+                                    onChange={handleChange}
+                                    required
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <BadgeIcon sx={{ color: "#0f766e" }} />
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                    sx={textFieldStyles}
+                                />
+                            </Stack>
+
+                            <TextField
+                                fullWidth
                                 label="Contraseña"
-                                placeholder="••••••••"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
+                                name="password"
+                                type={showPassword ? "text" : "password"}
+                                value={formData.password}
+                                onChange={handleChange}
                                 required
                                 InputProps={{
                                     startAdornment: (
@@ -187,7 +251,25 @@ function Login() {
                                 sx={textFieldStyles}
                             />
 
-                            {/* Botón de envío */}
+                            <TextField
+                                fullWidth
+                                label="Confirmar contraseña"
+                                name="password_confirm"
+                                type={showPassword ? "text" : "password"}
+                                value={formData.password_confirm}
+                                onChange={handleChange}
+                                required
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <LockIcon sx={{ color: "#0f766e" }} />
+                                        </InputAdornment>
+                                    ),
+                                }}
+                                sx={textFieldStyles}
+                            />
+
+                            {/* Botón de envío llamativo (Ámbar corporativo) */}
                             <Button
                                 type="submit"
                                 variant="contained"
@@ -198,28 +280,28 @@ function Login() {
                                     borderRadius: 3,
                                     fontSize: "1rem",
                                     fontWeight: 700,
-                                    backgroundColor: "#0f766e",
-                                    color: "#ffffff",
-                                    boxShadow: "0 4px 20px rgba(15,118,110,0.2)",
+                                    backgroundColor: "#f59e0b",
+                                    color: "#1c1917",
+                                    boxShadow: "0 4px 24px rgba(245,158,11,0.3)",
                                     "&:hover": {
-                                        backgroundColor: "#115e59",
-                                        boxShadow: "0 6px 24px rgba(15,118,110,0.3)",
+                                        backgroundColor: "#d97706",
+                                        boxShadow: "0 6px 28px rgba(245,158,11,0.4)",
                                     },
                                     textTransform: "none",
                                     mt: 1,
                                 }}
                             >
-                                Iniciar Sesión
+                                Registrarme como Profesor
                             </Button>
                         </Stack>
                     </form>
 
-                    {/* Redirección al registro global */}
+                    {/* Link alternativo */}
                     <Box sx={{ mt: 4, textAlign: "center" }}>
                         <Typography variant="body2" sx={{ color: "#64748b" }}>
-                            ¿No tienes una cuenta todavía?{" "}
+                            ¿Ya tienes cuenta docente?{" "}
                             <Button
-                                onClick={() => navigate("/register")}
+                                onClick={() => navigate("/login")}
                                 sx={{
                                     color: "#0f766e",
                                     fontWeight: 700,
@@ -230,14 +312,14 @@ function Login() {
                                     "&:hover": { textDecoration: "underline", backgroundColor: "transparent" }
                                 }}
                             >
-                                Registrarse
+                                Iniciar sesión
                             </Button>
                         </Typography>
                     </Box>
                 </Paper>
             </Container>
 
-            {/* Footer Unificado */}
+            {/* Footer Integrado */}
             <Box sx={{ backgroundColor: "#0a2e2b", py: 2.5, textAlign: "center", width: "100%" }}>
                 <Typography sx={{ color: "rgba(255,255,255,0.35)", fontSize: "0.78rem" }}>
                     © {new Date().getFullYear()} Course Management System · Tech Solution · ESPOL
@@ -247,7 +329,7 @@ function Login() {
     );
 }
 
-// Configuración de estilos reactivos para inputs consistentes
+// Estilos globales de campos personalizados para el ecosistema de la app
 const textFieldStyles = {
     "& .MuiOutlinedInput-root": {
         borderRadius: 2.5,
@@ -261,4 +343,4 @@ const textFieldStyles = {
     },
 };
 
-export default Login;
+export default TutorRegister;

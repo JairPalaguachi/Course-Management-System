@@ -8,6 +8,7 @@ import TutorDashboard from "../pages/TutorDashboard";
 import AdminDashboard from "../pages/AdminDashboard";
 import ProtectedRoute from "./ProtectedRoute";
 import TutorRegister from "../pages/TutorRegister";
+import TutorCourseCreate from '../pages/TutorCourseCreate';
 
 function AppRouter() {
     return (
@@ -47,6 +48,8 @@ function AppRouter() {
                 <Route path="/register/tutor" element={<TutorRegister />}
 
                 />
+
+                <Route path="/tutor/courses/create" element={<TutorCourseCreate />} />
 
             </Routes>
         </BrowserRouter>

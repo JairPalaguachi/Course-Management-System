@@ -1,20 +1,17 @@
-from django.shortcuts import render
-
-# Create your views here.
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import AllowAny
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .serializers import LoginSerializer
-
+from .serializers import LoginSerializer, TutorRegisterSerializer
 
 
 class LoginView(APIView):
+    permission_classes = [AllowAny]
 
     def post(self, request):
-
         serializer = LoginSerializer(
             data=request.data
         )
@@ -36,3 +33,34 @@ class LoginView(APIView):
                 "role": user.role
             }
         })
+
+
+class TutorRegisterView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = TutorRegisterSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        user = serializer.save()
+
+        return Response(
+            {
+                "message": "Tutor registrado exitosamente.",
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "role": user.role
+                }
+            },
+            status=status.HTTP_201_CREATED
+        )
+

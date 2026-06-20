@@ -8,6 +8,7 @@ import TutorDashboard from "../pages/TutorDashboard";
 import AdminDashboard from "../pages/AdminDashboard";
 import ProtectedRoute from "./ProtectedRoute";
 import TutorRegister from "../pages/TutorRegister";
+import StudentRegister from "../pages/StudentRegister";
 
 function AppRouter() {
     return (
@@ -46,6 +47,11 @@ function AppRouter() {
                 />
                 <Route path="/register/tutor" element={<TutorRegister />}
 
+                />
+
+                <Route
+                    path="/register/student"
+                    element={<StudentRegister />}
                 />
 
             </Routes>

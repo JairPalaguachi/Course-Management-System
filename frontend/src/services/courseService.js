@@ -70,3 +70,14 @@ export const uploadCourseCover = async (courseId, file) => {
     });
     return response.data;
 };
+
+export const getTutorCourses = async () => {
+    const response = await axios.get(
+        `${API_URL}/tutor/courses/list/`,
+        {
+            headers: getAuthHeader(),
+        }
+    );
+
+    return response.data;
+};

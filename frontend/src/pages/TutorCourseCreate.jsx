@@ -439,6 +439,8 @@ function TutorCourseCreate() {
                 })),
             });
 
+            setSavedCourseId(result.course.id);
+
             // 2. Mapeo inteligente sin perder el estado de los archivos (file_url)
             const savedSections = result.course?.sections ?? [];
             
@@ -705,9 +707,11 @@ function TutorCourseCreate() {
                                             id="cover-upload-input" style={{ display: 'none' }}
                                             onChange={(e) => {
                                                 const file = e.target.files[0];
+
                                                 if (file) {
-                                                    setCoverFile(file); // Guardamos para Axios
-                                                    setCoverPreview(URL.createObjectURL(file)); // Creamos URL para previsualizar
+                                                    setCoverFile(file);
+                                                    setCoverPreview(URL.createObjectURL(file));
+                                                    setHasCover(true);
                                                 }
                                             }}
                                         />

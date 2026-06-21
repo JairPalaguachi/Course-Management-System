@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+
 from .models import SectionContent, Course
 from .permissions import IsTutor
 from .serializers import SectionContentUploadSerializer, TutorCourseCreateSerializer
@@ -184,3 +185,22 @@ class TutorCourseDetailView(APIView):
                 ],
             },
         }, status=status.HTTP_200_OK)
+    
+class TutorCoursesListView(APIView):
+    permission_classes = [IsAuthenticated, IsTutor]
+
+    def get(self, request):
+        courses = Course.objects.filter(
+            tutor=request.user
+        ).order_by("-created_at")
+
+        return Response([
+            {
+                "id": course.id,
+                "title": course.title,
+                "status": course.status,
+                "category": course.category.name if course.category else None,
+                "created_at": course.created_at,
+            }
+            for course in courses
+        ])

@@ -51,13 +51,6 @@ export const getCategories = async () => {
   return response.data;
 };
 
-export const updateTutorCourse = async (courseId, courseData) => {
-  const response = await axios.put(`${API_URL}/tutor/courses/${courseId}/`, courseData, {
-    headers: getAuthHeader(),
-  });
-  return response.data;
-};
-
 export const uploadCourseCover = async (courseId, file) => {
     const formData = new FormData();
     formData.append('cover', file);
@@ -80,4 +73,24 @@ export const getTutorCourses = async () => {
     );
 
     return response.data;
+};
+
+export const getCourseDetail = async (courseId) => {
+  const response = await axios.get(`${API_URL}/tutor/courses/${courseId}/`, {
+    headers: getAuthHeader(),
+  });
+  return response.data;
+};
+
+export const updateTutorCourse = async (id, data) => {
+  // Usamos axios directo con la URL completa y los headers explícitos
+  const response = await axios.put(
+    `${API_URL}/tutor/courses/${id}/`, 
+    data, 
+    {
+      headers: getAuthHeader(),
+    }
+  );
+
+  return response.data;
 };

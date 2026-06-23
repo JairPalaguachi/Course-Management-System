@@ -10,6 +10,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import TutorRegister from "../pages/TutorRegister";
 import TutorCourseCreate from '../pages/TutorCourseCreate';
 import TutorCourses from "../pages/TutorCourses";
+import TutorCourseEdit from '../pages/TutorCourseEdit';
 
 function AppRouter() {
     return (
@@ -53,7 +54,16 @@ function AppRouter() {
                 <Route path="/tutor/courses/create" element={<TutorCourseCreate />} />
                 
                 <Route path="/tutor/courses" element={ <ProtectedRoute allowedRole="tutor"> <TutorCourses /> </ProtectedRoute> }
+                
+                />
 
+                <Route
+                    path="/tutor/courses/edit/:id"
+                    element={
+                        <ProtectedRoute allowedRole="tutor">
+                            <TutorCourseEdit />
+                        </ProtectedRoute>
+                    }
                 />
                 
             </Routes>

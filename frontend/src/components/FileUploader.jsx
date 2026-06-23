@@ -26,10 +26,9 @@ const TEAL_LIGHT = '#f0faf8';
  * Props:
  *   contentId  {number}    ID del SectionContent en la BD (obligatorio para subir)
  *   contentType {string}   'video' | 'pdf' | 'image'
- *   label       {string}   Nombre actual del contenido (se muestra como placeholder)
  *   onUploaded  {Function} Callback({ file_url, contentId }) cuando termina OK
  */
-export default function FileUploader({ contentId, contentType, label, onUploaded }) {
+export default function FileUploader({ contentId, contentType, onUploaded }) {
   const inputRef              = useRef(null);
   const [progress, setProgress] = useState(0);
   const [status,   setStatus]   = useState('idle'); // idle | uploading | done | error
@@ -96,7 +95,7 @@ export default function FileUploader({ contentId, contentType, label, onUploaded
             '&:hover': { borderColor: TEAL, color: TEAL, background: TEAL_LIGHT },
           }}
         >
-          {contentId ? `Subir ${contentType}` : 'Guarda el curso primero'}
+          {contentId ? `Subir ${contentType}` : 'Guarda los cambios para crear este contenido'}
         </Button>
       )}
 

@@ -340,26 +340,18 @@ function TutorCourses() {
 
                                             <Button
                                                 fullWidth
-                                                startIcon={
-                                                    <EditIcon />
-                                                }
+                                                startIcon={<EditIcon />}
                                                 variant="contained"
+                                                /* 👇 Agrega el manejador onClick aquí */
+                                                onClick={() => navigate(`/tutor/courses/edit/${course.id}`)} 
                                                 sx={{
-                                                    backgroundColor:
-                                                        TEAL,
-
-                                                    textTransform:
-                                                        "none",
-
+                                                    backgroundColor: TEAL,
+                                                    textTransform: "none",
                                                     fontWeight: 700,
-
                                                     borderRadius: 3,
-
-                                                    "&:hover":
-                                                        {
-                                                            backgroundColor:
-                                                                TEAL_MID,
-                                                        },
+                                                    "&:hover": {
+                                                        backgroundColor: TEAL_MID,
+                                                    },
                                                 }}
                                             >
                                                 Gestionar curso

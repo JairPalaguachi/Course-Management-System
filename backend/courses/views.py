@@ -130,7 +130,6 @@ class TutorCourseDetailView(APIView):
     permission_classes = [IsAuthenticated, IsTutor]
 
     def put(self, request, pk):
-        
         course = get_object_or_404(Course, pk=pk, tutor=request.user)
         
         
@@ -185,6 +184,51 @@ class TutorCourseDetailView(APIView):
                 ],
             },
         }, status=status.HTTP_200_OK)
+
+    
+    def get(self, request, pk):
+        course = get_object_or_404(
+            Course,
+            pk=pk,
+            tutor=request.user
+        )
+
+        return Response({
+            "id": course.id,
+            "title": course.title,
+            "description": course.description,
+            "category": course.category_id,
+            "duration": course.duration,
+            "level": course.level,
+            "objectives": course.objectives,
+            "preview_video": course.preview_video,
+            "language": course.language,
+
+            "cover_image": (
+                request.build_absolute_uri(course.cover_image.url)
+                if course.cover_image else None
+            ),
+
+            "sections": [
+                {
+                    "id": section.id,
+                    "name": section.name,
+                    "contents": [
+                        {
+                            "id": content.id,
+                            "type": content.type,
+                            "label": content.label,
+                            "file_url": (
+                                request.build_absolute_uri(content.file.url)
+                                if content.file else None
+                            )
+                        }
+                        for content in section.contents.all()
+                    ]
+                }
+                for section in course.sections.prefetch_related("contents")
+            ]
+        })
     
 class TutorCoursesListView(APIView):
     permission_classes = [IsAuthenticated, IsTutor]
@@ -217,7 +261,6 @@ class TutorCourseUpdateView(generics.RetrieveUpdateAPIView):
     - Solo el tutor dueño del curso puede editarlo (cursos ajenos devuelven 404).
     - Solo se puede editar si el curso está en 'draft' o 'rejected'.
     """
-
     serializer_class = CourseEditSerializer
     permission_classes = [IsAuthenticated, IsTutor, IsCourseOwner]
 

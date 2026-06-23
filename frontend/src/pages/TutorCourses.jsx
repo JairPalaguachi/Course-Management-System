@@ -320,23 +320,22 @@ function TutorCourses() {
                                             />
 
                                             <Typography
-    variant="h5"
-    sx={{
-        fontWeight: 700,
-        color: "#0a2e2b",
-        mb: 1,
-        minHeight: 70,
+                                                variant="h5"
+                                                sx={{
+                                                    fontWeight: 700,
+                                                    color: "#0a2e2b",
+                                                    mb: 1,
+                                                    minHeight: 70,
+                                                    overflow: "hidden",
+                                                    textOverflow: "ellipsis",
 
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-
-        display: "-webkit-box",
-        WebkitLineClamp: 2,
-        WebkitBoxOrient: "vertical",
-    }}
->
-    {course.title}
-</Typography>
+                                                    display: "-webkit-box",
+                                                    WebkitLineClamp: 2,
+                                                    WebkitBoxOrient: "vertical",
+                                                }}
+                                            >
+                                                {course.title}
+                                            </Typography>
 
                                             <Typography
                                                 sx={{

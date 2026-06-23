@@ -24,9 +24,11 @@ import UploadIcon from '@mui/icons-material/Upload';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 
 import FileUploader from '../components/FileUploader';
-import { createTutorCourse, updateTutorCourse, getCategories, uploadCourseCover } from '../services/courseService';
+import { createTutorCourse, updateTutorCourse, getCategories,uploadCourseCover } from '../services/courseService';
 
 import { useEffect } from 'react';
+
+
 
 const TEAL_DARK = '#0a2e2b';
 const TEAL_MID = '#10423f';
@@ -37,7 +39,7 @@ const TEAL_LIGHT = '#f0faf8';
 const cardSx = {
     backgroundColor: '#ffffff',
     border: '1px solid #e2e8f0',
-    borderRadius: 4,           
+    borderRadius: 4,
     boxShadow: 'none',
 };
 
@@ -327,9 +329,9 @@ function SectionEditor({ section, index, onChange, onRemove }) {
 // ─── Componente principal ─────────────────────────────────────────────────────
 function TutorCourseCreate() {
     const navigate = useNavigate();
-    const [coverFile, setCoverFile] = useState(null);       
-    const [coverPreview, setCoverPreview] = useState(null); 
-
+    const [coverPreview, setCoverPreview] = useState(null);
+    const [coverFile, setCoverFile] = useState(null);
+    const hasCover = !!coverPreview;
 
     const [categories, setCategories] = useState([]);
 
@@ -345,12 +347,23 @@ function TutorCourseCreate() {
         fetchCategories();
     }, []);
 
-    const [formData, setFormData] = useState({
+    const savedDraft = (() => {
+        if (typeof sessionStorage === 'undefined') return null;
+        const stored = sessionStorage.getItem('courseDraft');
+        if (!stored) return null;
+        try {
+            return JSON.parse(stored);
+        } catch {
+            return null;
+        }
+    })();
+
+    const [formData, setFormData] = useState(savedDraft?.formData ?? {
         title: '', description: '', category: '', duration: '',
         level: 'beginner', objectives: '', preview_video: '', language: 'Español',
     });
 
-    const [sections, setSections] = useState([
+    const [sections, setSections] = useState(savedDraft?.sections ?? [
         {
             id: 1, name: 'Introducción', open: true,
             contents: [
@@ -362,11 +375,9 @@ function TutorCourseCreate() {
         },
     ]); 
 
-    const [hasCover, setHasCover] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
-    const [validationErrors, setValidationErrors] = useState({});
 
     const [savedCourseId, setSavedCourseId] = useState(null);
     console.log("savedCourseId =", savedCourseId);
@@ -414,12 +425,12 @@ function TutorCourseCreate() {
         }).join('\n\n');
 
     const handleSubmit = async (mode = 'draft') => {
-        setError(''); 
+        setError('');
         setSuccess('');
         const err = validate();
         if (err) { setError(err); return; }
         setLoading(true);
-        
+
         try {
             // 1. Enviamos la petición al backend
             const payload = {
@@ -471,7 +482,11 @@ function TutorCourseCreate() {
                 );
             }
 
-            setSavedCourseId(result.course.id);
+            
+
+            if (result.course?.id) {
+                setSavedCourseId(result.course.id);
+            }
 
             if (coverFile) {
                 await uploadCourseCover(
@@ -482,7 +497,7 @@ function TutorCourseCreate() {
 
             // 2. Mapeo inteligente sin perder el estado de los archivos (file_url)
             const savedSections = result.course?.sections ?? [];
-            
+
             setSections((prevSections) =>
                 prevSections.map((localSec) => {
                     // Buscamos la sección en la DB que coincida por nombre
@@ -511,11 +526,11 @@ function TutorCourseCreate() {
 
             // 3. Mostramos mensaje de éxito correspondiente
             setSuccess(
-                mode === 'draft' 
-                ? 'Borrador guardado. Ya puedes subir los archivos en las secciones.' 
-                : 'Curso enviado a revisión exitosamente.'
+                mode === 'draft'
+                    ? 'Borrador guardado. Ya puedes subir los archivos en las secciones.'
+                    : 'Curso enviado a revisión exitosamente.'
             );
-            
+
             // 4. Redirección condicional (Solo si no es borrador)
             
 
@@ -533,8 +548,8 @@ function TutorCourseCreate() {
             else if (e.response?.status === 403) setError('Solo los tutores pueden crear cursos.');
             else if (e.response?.data) setError(JSON.stringify(e.response.data));
             else setError('Ocurrió un error al guardar el curso. Inténtalo nuevamente.');
-        } finally { 
-            setLoading(false); 
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -576,7 +591,7 @@ function TutorCourseCreate() {
                     }} />
 
                     <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
-                        
+
                         <Button
                             startIcon={<ArrowBackIcon />}
                             onClick={() => navigate('/tutor/courses')}
@@ -588,7 +603,7 @@ function TutorCourseCreate() {
                             Mis cursos
                         </Button>
 
-                        
+
                         <Box sx={{
                             display: 'flex',
                             alignItems: 'center',
@@ -605,7 +620,7 @@ function TutorCourseCreate() {
                                 sx={{ background: '#fef3c7', color: '#92400e', fontWeight: 700, fontSize: 11, border: '1px solid #fcd34d' }} />
                         </Box>
 
-                        
+
                         <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: 13.5, textAlign: 'center' }}>
                             Completa la información y organiza las secciones de tu curso.
                         </Typography>
@@ -756,7 +771,6 @@ function TutorCourseCreate() {
                                                 if (file) {
                                                     setCoverFile(file);
                                                     setCoverPreview(URL.createObjectURL(file));
-                                                    setHasCover(true);
                                                 }
                                             }}
                                         />

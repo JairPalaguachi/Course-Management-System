@@ -8,8 +8,9 @@ import TutorDashboard from "../pages/TutorDashboard";
 import AdminDashboard from "../pages/AdminDashboard";
 import ProtectedRoute from "./ProtectedRoute";
 import TutorRegister from "../pages/TutorRegister";
-import TutorCourseCreate from '../pages/TutorCourseCreate';
+import TutorCourseCreate from "../pages/TutorCourseCreate";
 import TutorCourses from "../pages/TutorCourses";
+import StudentRegister from "../pages/StudentRegister";
 
 function AppRouter() {
     return (
@@ -19,6 +20,7 @@ function AppRouter() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/courses" element={<Courses />} />
+
                 {/* dashboards por rol */}
                 <Route
                     path="/student/dashboard"
@@ -46,16 +48,34 @@ function AppRouter() {
                         </ProtectedRoute>
                     }
                 />
-                <Route path="/register/tutor" element={<TutorRegister />}
 
+                <Route
+                    path="/register/tutor"
+                    element={<TutorRegister />}
                 />
 
-                <Route path="/tutor/courses/create" element={<TutorCourseCreate />} />
-                
-                <Route path="/tutor/courses" element={ <ProtectedRoute allowedRole="tutor"> <TutorCourses /> </ProtectedRoute> }
-
+                <Route
+                    path="/register/student"
+                    element={<StudentRegister />}
                 />
-                
+
+                <Route
+                    path="/tutor/courses/create"
+                    element={
+                        <ProtectedRoute allowedRole="tutor">
+                            <TutorCourseCreate />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/tutor/courses"
+                    element={
+                        <ProtectedRoute allowedRole="tutor">
+                            <TutorCourses />
+                        </ProtectedRoute>
+                    }
+                />
             </Routes>
         </BrowserRouter>
     );

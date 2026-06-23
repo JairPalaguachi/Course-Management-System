@@ -98,7 +98,7 @@ class TutorCourseCreateSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "status", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at"]
 
     # ── validaciones de campos ─────────────────────────────────────────────────
 
@@ -128,10 +128,15 @@ class TutorCourseCreateSerializer(serializers.ModelSerializer):
         sections_data = validated_data.pop("sections_meta", [])
         request       = self.context["request"]
 
+        status = validated_data.pop(
+            "status",
+            Course.Status.DRAFT
+        )
+
         course = Course.objects.create(
             **validated_data,
             tutor=request.user,
-            status=Course.Status.DRAFT,
+            status=status,
         )
 
         for order, section_data in enumerate(sections_data):

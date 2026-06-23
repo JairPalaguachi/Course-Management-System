@@ -109,12 +109,15 @@ def upload_course_cover(request, pk):
     except Course.DoesNotExist:
         return Response({'error': 'Curso no encontrado'}, status=404)
 
+    
     if 'cover' not in request.FILES:
+        print("NO EXISTE COVER")
         return Response({'error': 'No se envió ninguna imagen'}, status=400)
 
-   
+    print("ARCHIVO:", request.FILES['cover'])
     course.cover_image = request.FILES['cover']
     course.save()
+    print("GUARDADO:", course.cover_image)
     
     return Response({
         'message': 'Portada subida exitosamente', 
@@ -143,6 +146,10 @@ class TutorCourseDetailView(APIView):
         course.preview_video = request.data.get('preview_video', course.preview_video)
         course.language = request.data.get('language', course.language)
         course.initial_content = request.data.get('initial_content', course.initial_content)
+        course.status = request.data.get(
+            "status",
+            course.status
+        )
         course.save()
 
         
@@ -198,9 +205,16 @@ class TutorCoursesListView(APIView):
             {
                 "id": course.id,
                 "title": course.title,
+                "description": course.description,
                 "status": course.status,
                 "category": course.category.name if course.category else None,
                 "created_at": course.created_at,
+
+                "cover_image": (
+                    request.build_absolute_uri(course.cover_image.url)
+                    if course.cover_image
+                    else None
+                ),
             }
             for course in courses
         ])

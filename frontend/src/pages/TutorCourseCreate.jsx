@@ -360,7 +360,7 @@ function TutorCourseCreate() {
             hasEval: false,
             eval: { name: '', maxScore: 100, minScore: 60, attempts: '1', instructions: '' },
         },
-    ]);
+    ]); 
 
     const [hasCover, setHasCover] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -369,18 +369,18 @@ function TutorCourseCreate() {
     const [validationErrors, setValidationErrors] = useState({});
 
     const [savedCourseId, setSavedCourseId] = useState(null);
+    console.log("savedCourseId =", savedCourseId);
 
     // 1. Cargar datos guardados al entrar a la página
+    
     useEffect(() => {
-        const savedDraft = sessionStorage.getItem('courseDraft');
-        if (savedDraft) {
-            const parsed = JSON.parse(savedDraft);
-            if (parsed.formData) setFormData(parsed.formData);
-            if (parsed.sections) setSections(parsed.sections);
-            if (parsed.savedCourseId) setSavedCourseId(parsed.savedCourseId);
-        }
+        return () => {
+            if (window.location.pathname.includes('/tutor/courses/create')) {
+                sessionStorage.removeItem('courseDraft');
+            }
+        };
     }, []);
-
+        
     // 2. Guardar automáticamente cada vez que haya un cambio
     useEffect(() => {
         if (formData.title !== '' || sections.length > 0) {
@@ -422,24 +422,63 @@ function TutorCourseCreate() {
         
         try {
             // 1. Enviamos la petición al backend
-            const result = await createTutorCourse({
-                title: formData.title, 
+            const payload = {
+                title: formData.title,
                 description: formData.description,
-                category: Number(formData.category), 
+                category: Number(formData.category),
                 duration: Number(formData.duration),
                 initial_content: buildInitialContent(),
-                level: formData.level, 
+                level: formData.level,
                 objectives: formData.objectives,
-                preview_video: formData.preview_video, 
+                preview_video: formData.preview_video,
                 language: formData.language,
+
+                status:
+                    mode === "review"
+                        ? "pending"
+                        : "draft",
+
                 sections_meta: sections.map((s) => ({
                     name: s.name,
-                    contents: s.contents.map((c) => ({ type: c.type, label: c.label })),
-                    evaluation: s.hasEval ? s.eval : null,
+                    contents: s.contents.map((c) => ({
+                        type: c.type,
+                        label: c.label,
+                    })),
+                    evaluation: s.hasEval
+                        ? s.eval
+                        : null,
                 })),
-            });
+            };
+
+            let result;
+
+            console.log("ID ACTUAL:", savedCourseId);
+
+            if (savedCourseId) {
+                console.log("ACTUALIZANDO CURSO");
+                
+                result = await updateTutorCourse(
+                    savedCourseId,
+                    payload
+                );
+
+            } else {
+
+                console.log("CREANDO CURSO NUEVO");
+
+                result = await createTutorCourse(
+                    payload
+                );
+            }
 
             setSavedCourseId(result.course.id);
+
+            if (coverFile) {
+                await uploadCourseCover(
+                    result.course.id,
+                    coverFile
+                );
+            }
 
             // 2. Mapeo inteligente sin perder el estado de los archivos (file_url)
             const savedSections = result.course?.sections ?? [];
@@ -478,8 +517,14 @@ function TutorCourseCreate() {
             );
             
             // 4. Redirección condicional (Solo si no es borrador)
-            if (mode !== 'draft') {
-                setTimeout(() => navigate('/tutor/courses'), 1500);
+            
+
+            if (mode === "review") {
+                sessionStorage.removeItem('courseDraft');
+
+                setTimeout(() => {
+                    navigate('/tutor/courses');
+                }, 1000);
             }
 
         } catch (e) {

@@ -24,7 +24,7 @@ import UploadIcon from '@mui/icons-material/Upload';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 
 import FileUploader from '../components/FileUploader';
-import { createTutorCourse, updateTutorCourse, getCategories, uploadCourseCover } from '../services/courseService';
+import { createTutorCourse, getCategories } from '../services/courseService';
 
 import { useEffect } from 'react';
 
@@ -327,9 +327,7 @@ function SectionEditor({ section, index, onChange, onRemove }) {
 // ─── Componente principal ─────────────────────────────────────────────────────
 function TutorCourseCreate() {
     const navigate = useNavigate();
-    const [coverFile, setCoverFile] = useState(null);       
-    const [coverPreview, setCoverPreview] = useState(null); 
-
+    const [coverPreview, setCoverPreview] = useState(null);
 
     const [categories, setCategories] = useState([]);
 
@@ -345,12 +343,24 @@ function TutorCourseCreate() {
         fetchCategories();
     }, []);
 
-    const [formData, setFormData] = useState({
+    const initialFormData = {
         title: '', description: '', category: '', duration: '',
         level: 'beginner', objectives: '', preview_video: '', language: 'Español',
-    });
+    };
 
-    const [sections, setSections] = useState([
+    const savedDraft = (() => {
+        if (typeof sessionStorage === 'undefined') return null;
+        const stored = sessionStorage.getItem('courseDraft');
+        if (!stored) return null;
+        try {
+            return JSON.parse(stored);
+        } catch {
+            return null;
+        }
+    })();
+
+    const [formData, setFormData] = useState(savedDraft?.formData ?? initialFormData);
+    const [sections, setSections] = useState(savedDraft?.sections ?? [
         {
             id: 1, name: 'Introducción', open: true,
             contents: [
@@ -362,24 +372,13 @@ function TutorCourseCreate() {
         },
     ]);
 
-    const [hasCover, setHasCover] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
-    const [validationErrors, setValidationErrors] = useState({});
 
-    const [savedCourseId, setSavedCourseId] = useState(null);
+    const savedCourseId = savedDraft?.savedCourseId ?? null;
 
-    // 1. Cargar datos guardados al entrar a la página
-    useEffect(() => {
-        const savedDraft = sessionStorage.getItem('courseDraft');
-        if (savedDraft) {
-            const parsed = JSON.parse(savedDraft);
-            if (parsed.formData) setFormData(parsed.formData);
-            if (parsed.sections) setSections(parsed.sections);
-            if (parsed.savedCourseId) setSavedCourseId(parsed.savedCourseId);
-        }
-    }, []);
+    const hasCover = !!coverPreview;
 
     // 2. Guardar automáticamente cada vez que haya un cambio
     useEffect(() => {
@@ -706,8 +705,7 @@ function TutorCourseCreate() {
                                             onChange={(e) => {
                                                 const file = e.target.files[0];
                                                 if (file) {
-                                                    setCoverFile(file); // Guardamos para Axios
-                                                    setCoverPreview(URL.createObjectURL(file)); // Creamos URL para previsualizar
+                                                    setCoverPreview(URL.createObjectURL(file));
                                                 }
                                             }}
                                         />

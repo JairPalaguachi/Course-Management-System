@@ -24,9 +24,11 @@ import UploadIcon from '@mui/icons-material/Upload';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 
 import FileUploader from '../components/FileUploader';
-import { createTutorCourse, getCategories, uploadCourseCover } from '../services/courseService';
+import { createTutorCourse, updateTutorCourse, getCategories, uploadCourseCover } from '../services/courseService';
 
 import { useEffect } from 'react';
+
+
 
 const TEAL_DARK = '#0a2e2b';
 const TEAL_MID = '#10423f';
@@ -326,9 +328,9 @@ function SectionEditor({ section, index, onChange, onRemove }) {
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 function TutorCourseCreate() {
-    const navigate = useNavigate();     
-    const [coverPreview, setCoverPreview] = useState(null); 
-    const [coverFile, setCoverFile] = useState(null); //  ¡Correcto!
+    const navigate = useNavigate();
+    const [coverPreview, setCoverPreview] = useState(null);
+    const [coverFile, setCoverFile] = useState(null);
 
     const [categories, setCategories] = useState([]);
 
@@ -343,6 +345,8 @@ function TutorCourseCreate() {
         };
         fetchCategories();
     }, []);
+
+
 
     const savedDraft = (() => {
         if (typeof sessionStorage === 'undefined') return null;
@@ -376,8 +380,18 @@ function TutorCourseCreate() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-    const [savedCourseId, setSavedCourseId] = useState(savedDraft?.savedCourseId ?? null);
+    const [savedCourseId, setSavedCourseId] = useState(null);
+    console.log("savedCourseId =", savedCourseId);
 
+    // 1. Cargar datos guardados al entrar a la página
+
+    useEffect(() => {
+        return () => {
+            if (window.location.pathname.includes('/tutor/courses/create')) {
+                sessionStorage.removeItem('courseDraft');
+            }
+        };
+    }, []);
 
     // 2. Guardar automáticamente cada vez que haya un cambio
     useEffect(() => {
@@ -430,27 +444,62 @@ function TutorCourseCreate() {
                 objectives: formData.objectives,
                 preview_video: formData.preview_video,
                 language: formData.language,
+
+                status:
+                    mode === "review"
+                        ? "pending"
+                        : "draft",
+
                 sections_meta: sections.map((s) => ({
                     name: s.name,
                     contents: s.contents.map((c) => ({
                         type: c.type,
                         label: c.label,
                     })),
-                    evaluation: s.hasEval ? s.eval : null,
+                    evaluation: s.hasEval
+                        ? s.eval
+                        : null,
                 })),
             };
 
-            const result = await createTutorCourse(payload);
+            let result;
 
-            setSavedCourseId(result.course.id);
-            // 📸 👇 ¡AQUÍ COLOCAMOS LA SUBIDA DE PORTADA! 👇
-            // Si el usuario seleccionó una imagen de portada local y la API nos devolvió el ID del curso...
-            if (coverFile && result.course?.id) {
-                await uploadCourseCover(result.course.id, coverFile);
+            console.log("ID ACTUAL:", savedCourseId);
+
+            if (savedCourseId) {
+                console.log("ACTUALIZANDO CURSO");
+
+                result = await updateTutorCourse(
+                    savedCourseId,
+                    payload
+                );
+
+            } else {
+
+                console.log("CREANDO CURSO NUEVO");
+
+                result = await createTutorCourse(
+                    payload
+                );
+            }
+
+            console.log("RESPUESTA DEL BACKEND:", result);
+
+            const savedCourse = result.course ?? result;
+
+            if (!savedCourse?.id) {
+                console.error("Respuesta inesperada del backend:", result);
+                throw new Error("El backend no devolvió el ID del curso.");
+            }
+
+            setSavedCourseId(savedCourse.id);
+
+            if (coverFile) {
+                await uploadCourseCover(savedCourse.id, coverFile);
             }
 
             // 2. Mapeo inteligente sin perder el estado de los archivos (file_url)
-            const savedSections = result.course?.sections ?? [];
+            const savedSections = savedCourse.sections ?? [];
 
             setSections((prevSections) =>
                 prevSections.map((localSec) => {
@@ -469,7 +518,7 @@ function TutorCourseCreate() {
                             );
 
                             return {
-                                ...localContent, // 👈 Conserva file_url y propiedades visuales locales
+                                ...localContent,
                                 savedId: dbContent?.id ?? localContent.savedId ?? null,
                                 file_url: dbContent?.file_url ?? localContent.file_url ?? null
                             };
@@ -486,8 +535,14 @@ function TutorCourseCreate() {
             );
 
             // 4. Redirección condicional (Solo si no es borrador)
-            if (mode !== 'draft') {
-                setTimeout(() => navigate('/tutor/courses'), 1500);
+
+
+            if (mode === "review") {
+                sessionStorage.removeItem('courseDraft');
+
+                setTimeout(() => {
+                    navigate('/tutor/courses');
+                }, 1000);
             }
 
         } catch (e) {
@@ -539,7 +594,6 @@ function TutorCourseCreate() {
                     }} />
 
                     <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
-
                         <Button
                             startIcon={<ArrowBackIcon />}
                             onClick={() => navigate('/tutor/courses')}
@@ -550,7 +604,6 @@ function TutorCourseCreate() {
                         >
                             Mis cursos
                         </Button>
-
 
                         <Box sx={{
                             display: 'flex',
@@ -567,7 +620,6 @@ function TutorCourseCreate() {
                             <Chip label="Borrador" size="small"
                                 sx={{ background: '#fef3c7', color: '#92400e', fontWeight: 700, fontSize: 11, border: '1px solid #fcd34d' }} />
                         </Box>
-
 
                         <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: 13.5, textAlign: 'center' }}>
                             Completa la información y organiza las secciones de tu curso.
@@ -717,6 +769,7 @@ function TutorCourseCreate() {
                                                 const file = e.target.files[0];
 
                                                 if (file) {
+                                                    setCoverFile(file);
                                                     setCoverPreview(URL.createObjectURL(file));
                                                     setCoverFile(file);
                                                 }

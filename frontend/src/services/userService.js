@@ -8,7 +8,7 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
  * @returns {Promise<Array>} Lista de usuarios
  */
 export const getUsers = async (role = null) => {
-  const token = localStorage.getItem("access_token");
+  const token = localStorage.getItem("access");
   const params = role ? { role } : {};
 
   const response = await axios.get(`${API_URL}/users/`, {

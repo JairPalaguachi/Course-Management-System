@@ -1,7 +1,26 @@
+from django.contrib.auth import authenticate, get_user_model
 from rest_framework import serializers
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
+
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
+
+    def validate(self, attrs):
+        user = authenticate(
+            username=attrs["username"],
+            password=attrs["password"]
+        )
+
+        if not user:
+            raise serializers.ValidationError(
+                "Credenciales inválidas"
+            )
+
+        attrs["user"] = user
+        return attrs
 
 
 class UserListSerializer(serializers.ModelSerializer):

@@ -328,7 +328,7 @@ function SectionEditor({ section, index, onChange, onRemove }) {
 function TutorCourseCreate() {
     const navigate = useNavigate();     
     const [coverPreview, setCoverPreview] = useState(null); 
-    const [coverFile, setCoverFile] = useState(null);
+    const [coverFile, setCoverFile] = useState(null); //  ¡Correcto!
 
     const [categories, setCategories] = useState([]);
 
@@ -438,7 +438,9 @@ function TutorCourseCreate() {
                     })),
                     evaluation: s.hasEval ? s.eval : null,
                 })),
-            });
+            };
+
+            const result = await createTutorCourse(payload);
 
             setSavedCourseId(result.course.id);
             // 📸 👇 ¡AQUÍ COLOCAMOS LA SUBIDA DE PORTADA! 👇
@@ -699,7 +701,7 @@ function TutorCourseCreate() {
                         <Grid item xs={12} md={4}>
                             <Stack spacing={2} sx={{ position: { md: 'sticky' }, top: { md: 24 } }}>
 
-                                <ProgressSidebar formData={formData} hasCover={hasCover} />
+                                <ProgressSidebar formData={formData} hasCover={!!coverPreview} />
 
                                 {/* Portada */}
                                 <Card sx={cardSx}>
@@ -716,6 +718,7 @@ function TutorCourseCreate() {
 
                                                 if (file) {
                                                     setCoverPreview(URL.createObjectURL(file));
+                                                    setCoverFile(file);
                                                 }
                                             }}
                                         />

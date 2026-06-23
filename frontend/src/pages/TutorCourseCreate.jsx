@@ -24,9 +24,11 @@ import UploadIcon from '@mui/icons-material/Upload';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 
 import FileUploader from '../components/FileUploader';
-import { createTutorCourse, updateTutorCourse, getCategories } from '../services/courseService';
+import { createTutorCourse, updateTutorCourse, getCategories,uploadCourseCover } from '../services/courseService';
 
 import { useEffect } from 'react';
+
+
 
 const TEAL_DARK = '#0a2e2b';
 const TEAL_MID = '#10423f';
@@ -328,6 +330,7 @@ function SectionEditor({ section, index, onChange, onRemove }) {
 function TutorCourseCreate() {
     const navigate = useNavigate();
     const [coverPreview, setCoverPreview] = useState(null);
+    const [coverFile, setCoverFile] = useState(null);
     const hasCover = !!coverPreview;
 
     const [categories, setCategories] = useState([]);
@@ -370,16 +373,25 @@ function TutorCourseCreate() {
             hasEval: false,
             eval: { name: '', maxScore: 100, minScore: 60, attempts: '1', instructions: '' },
         },
-    ]);
+    ]); 
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-    const [savedCourseId, setSavedCourseId] = useState(savedDraft?.savedCourseId ?? null);
+    const [savedCourseId, setSavedCourseId] = useState(null);
+    console.log("savedCourseId =", savedCourseId);
 
     // 1. Cargar datos guardados al entrar a la página
-
+    
+    useEffect(() => {
+        return () => {
+            if (window.location.pathname.includes('/tutor/courses/create')) {
+                sessionStorage.removeItem('courseDraft');
+            }
+        };
+    }, []);
+        
     // 2. Guardar automáticamente cada vez que haya un cambio
     useEffect(() => {
         if (formData.title !== '' || sections.length > 0) {
@@ -431,22 +443,56 @@ function TutorCourseCreate() {
                 objectives: formData.objectives,
                 preview_video: formData.preview_video,
                 language: formData.language,
+
+                status:
+                    mode === "review"
+                        ? "pending"
+                        : "draft",
+
                 sections_meta: sections.map((s) => ({
                     name: s.name,
                     contents: s.contents.map((c) => ({
                         type: c.type,
                         label: c.label,
                     })),
-                    evaluation: s.hasEval ? s.eval : null,
+                    evaluation: s.hasEval
+                        ? s.eval
+                        : null,
                 })),
             };
 
-            const result = savedCourseId
-                ? await updateTutorCourse(savedCourseId, payload)
-                : await createTutorCourse(payload);
+            let result;
+
+            console.log("ID ACTUAL:", savedCourseId);
+
+            if (savedCourseId) {
+                console.log("ACTUALIZANDO CURSO");
+                
+                result = await updateTutorCourse(
+                    savedCourseId,
+                    payload
+                );
+
+            } else {
+
+                console.log("CREANDO CURSO NUEVO");
+
+                result = await createTutorCourse(
+                    payload
+                );
+            }
+
+            
 
             if (result.course?.id) {
                 setSavedCourseId(result.course.id);
+            }
+
+            if (coverFile) {
+                await uploadCourseCover(
+                    result.course.id,
+                    coverFile
+                );
             }
 
             // 2. Mapeo inteligente sin perder el estado de los archivos (file_url)
@@ -486,8 +532,14 @@ function TutorCourseCreate() {
             );
 
             // 4. Redirección condicional (Solo si no es borrador)
-            if (mode !== 'draft') {
-                setTimeout(() => navigate('/tutor/courses'), 1500);
+            
+
+            if (mode === "review") {
+                sessionStorage.removeItem('courseDraft');
+
+                setTimeout(() => {
+                    navigate('/tutor/courses');
+                }, 1000);
             }
 
         } catch (e) {
@@ -717,6 +769,7 @@ function TutorCourseCreate() {
                                                 const file = e.target.files[0];
 
                                                 if (file) {
+                                                    setCoverFile(file);
                                                     setCoverPreview(URL.createObjectURL(file));
                                                 }
                                             }}

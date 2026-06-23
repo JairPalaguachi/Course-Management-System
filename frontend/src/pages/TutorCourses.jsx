@@ -238,9 +238,14 @@ function TutorCourses() {
                                 >
                                     <Card
                                         sx={{
+                                             maxWidth: 350,
+                                            width: "100%",
+                                            margin: "0 auto",
                                             borderRadius: 4,
                                             overflow: "hidden",
                                             height: "100%",
+                                            display: "flex",
+                                            flexDirection: "column",
 
                                             border:
                                                 "1px solid #e2e8f0",
@@ -262,28 +267,40 @@ function TutorCourses() {
                                             sx={{
                                                 height: 180,
 
-                                                background: `linear-gradient(
-                                                    145deg,
-                                                    ${TEAL_DARK},
-                                                    ${TEAL}
-                                                )`,
+                                                backgroundImage: course.cover_image
+                                                    ? `url(${course.cover_image})`
+                                                    : `linear-gradient(
+                                                        145deg,
+                                                        ${TEAL_DARK},
+                                                        ${TEAL}
+                                                    )`,
+
+                                                backgroundSize: "cover",
+                                                backgroundPosition: "center",
+                                                backgroundRepeat: "no-repeat",
 
                                                 display: "flex",
-                                                alignItems:
-                                                    "center",
-                                                justifyContent:
-                                                    "center",
+                                                alignItems: "center",
+                                                justifyContent: "center",
                                             }}
                                         >
-                                            <SchoolIcon
-                                                sx={{
-                                                    fontSize: 70,
-                                                    color: "#fff",
-                                                }}
-                                            />
+                                            {!course.cover_image && (
+                                                <SchoolIcon
+                                                    sx={{
+                                                        fontSize: 70,
+                                                        color: "#fff",
+                                                    }}
+                                                />
+                                            )}
                                         </Box>
 
-                                        <CardContent>
+                                        <CardContent
+                                            sx={{
+                                                flexGrow: 1,
+                                                display: "flex",
+                                                flexDirection: "column",
+                                            }}
+                                        >
                                             <Chip
                                                 label={
                                                     status.label
@@ -305,10 +322,16 @@ function TutorCourses() {
                                             <Typography
                                                 variant="h5"
                                                 sx={{
-                                                    fontWeight: 800,
-                                                    color:
-                                                        TEAL_DARK,
+                                                    fontWeight: 700,
+                                                    color: "#0a2e2b",
                                                     mb: 1,
+                                                    minHeight: 70,
+                                                    overflow: "hidden",
+                                                    textOverflow: "ellipsis",
+
+                                                    display: "-webkit-box",
+                                                    WebkitLineClamp: 2,
+                                                    WebkitBoxOrient: "vertical",
                                                 }}
                                             >
                                                 {course.title}
@@ -316,10 +339,14 @@ function TutorCourses() {
 
                                             <Typography
                                                 sx={{
-                                                    color:
-                                                        "#64748b",
-                                                    minHeight: 50,
+                                                    color: "#64748b",
                                                     mb: 2,
+                                                    minHeight: 50,
+
+                                                    display: "-webkit-box",
+                                                    WebkitLineClamp: 2,
+                                                    WebkitBoxOrient: "vertical",
+                                                    overflow: "hidden",
                                                 }}
                                             >
                                                 {course.description ||
@@ -345,6 +372,7 @@ function TutorCourses() {
                                                 }
                                                 variant="contained"
                                                 sx={{
+                                                     mt: "auto",
                                                     backgroundColor:
                                                         TEAL,
 

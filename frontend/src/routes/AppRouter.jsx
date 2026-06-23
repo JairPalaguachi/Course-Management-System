@@ -8,6 +8,7 @@ import TutorDashboard from "../pages/TutorDashboard";
 import AdminDashboard from "../pages/AdminDashboard";
 import ProtectedRoute from "./ProtectedRoute";
 import TutorRegister from "../pages/TutorRegister";
+import UserListPage from "../pages/admin/UserListPage";
 import TutorCourseCreate from "../pages/TutorCourseCreate";
 import TutorCourses from "../pages/TutorCourses";
 import StudentRegister from "../pages/StudentRegister";
@@ -53,7 +54,14 @@ function AppRouter() {
                     path="/register/tutor"
                     element={<TutorRegister />}
                 />
-
+                <Route
+                    path="/admin/users"
+                    element={
+                        <ProtectedRoute allowedRole="admin">
+                            <UserListPage />
+                        </ProtectedRoute>
+                    }
+                />
                 <Route
                     path="/register/student"
                     element={<StudentRegister />}
@@ -80,5 +88,6 @@ function AppRouter() {
         </BrowserRouter>
     );
 }
+
 
 export default AppRouter;

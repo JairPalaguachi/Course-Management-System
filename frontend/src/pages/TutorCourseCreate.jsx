@@ -347,6 +347,8 @@ function TutorCourseCreate() {
         fetchCategories();
     }, []);
 
+    
+
     const savedDraft = (() => {
         if (typeof sessionStorage === 'undefined') return null;
         const stored = sessionStorage.getItem('courseDraft');
@@ -515,7 +517,7 @@ function TutorCourseCreate() {
                             );
 
                             return {
-                                ...localContent, // 👈 Conserva file_url y propiedades visuales locales
+                                ...localContent, 
                                 savedId: dbContent?.id ?? localContent.savedId ?? null,
                                 file_url: dbContent?.file_url ?? localContent.file_url ?? null
                             };
@@ -591,7 +593,6 @@ function TutorCourseCreate() {
                     }} />
 
                     <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
-
                         <Button
                             startIcon={<ArrowBackIcon />}
                             onClick={() => navigate('/tutor/courses')}
@@ -602,7 +603,6 @@ function TutorCourseCreate() {
                         >
                             Mis cursos
                         </Button>
-
 
                         <Box sx={{
                             display: 'flex',
@@ -619,7 +619,6 @@ function TutorCourseCreate() {
                             <Chip label="Borrador" size="small"
                                 sx={{ background: '#fef3c7', color: '#92400e', fontWeight: 700, fontSize: 11, border: '1px solid #fcd34d' }} />
                         </Box>
-
 
                         <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: 13.5, textAlign: 'center' }}>
                             Completa la información y organiza las secciones de tu curso.

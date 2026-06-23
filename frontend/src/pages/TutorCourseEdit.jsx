@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
     Box, Button, Card, CardContent, Chip, CircularProgress,
     Container, Divider, FormControl, FormControlLabel, Grid,
@@ -24,22 +24,24 @@ import UploadIcon from '@mui/icons-material/Upload';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 
 import FileUploader from '../components/FileUploader';
-import { createTutorCourse, updateTutorCourse, getCategories, uploadCourseCover } from '../services/courseService';
+import {
+    getCourseDetail,
+    updateTutorCourse,
+    getCategories,
+    uploadCourseCover
+} from "../services/courseService";
 
 import { useEffect } from 'react';
-
-
 
 const TEAL_DARK = '#0a2e2b';
 const TEAL_MID = '#10423f';
 const TEAL = '#0f766e';
 const TEAL_LIGHT = '#f0faf8';
 
-
 const cardSx = {
     backgroundColor: '#ffffff',
     border: '1px solid #e2e8f0',
-    borderRadius: 4,
+    borderRadius: 4,           
     boxShadow: 'none',
 };
 
@@ -103,6 +105,62 @@ function makeContent(type) {
 }
 
 
+function normalizeSections(courseSections = []) {
+    return courseSections.map((section, index) => ({
+        id: section.id ? `saved-section-${section.id}` : `section-${index}`,
+        savedId: section.id ?? null,
+        name: section.name || `Seccion ${index + 1}`,
+        open: true,
+        contents: (section.contents || []).map((content, contentIndex) => ({
+            id: content.id ? `saved-content-${content.id}` : `content-${index}-${contentIndex}`,
+            savedId: content.id ?? null,
+            type: content.type,
+            label: content.label || '',
+            body: content.body || '',
+            file_url: content.file_url || null,
+        })),
+        hasEval: Boolean(section.evaluation),
+        eval: {
+            name: section.evaluation?.name || '',
+            maxScore: section.evaluation?.max_score ?? 100,
+            minScore: section.evaluation?.min_score ?? 60,
+            attempts: section.evaluation?.attempts || '1',
+            instructions: section.evaluation?.instructions || '',
+        },
+    }));
+}
+
+function buildSectionsPayload(sections) {
+    return sections.map((section) => ({
+        id: section.savedId || undefined,
+        name: section.name,
+        contents: section.contents.map((content) => ({
+            id: content.savedId || undefined,
+            type: content.type,
+            label: content.label,
+            body: content.body || '',
+        })),
+        evaluation: section.hasEval ? {
+            name: section.eval.name,
+            max_score: Number(section.eval.maxScore) || 100,
+            min_score: Number(section.eval.minScore) || 0,
+            attempts: section.eval.attempts || '1',
+            instructions: section.eval.instructions || '',
+        } : null,
+    }));
+}
+
+function buildInitialContent(sections) {
+    return sections.map((section, index) => {
+        const items = section.contents
+            .map((content) => `  - [${content.type.toUpperCase()}] ${content.label}`)
+            .join('\n');
+        const evalText = section.hasEval
+            ? `\n  [EVALUACION] ${section.eval.name || 'Sin nombre'} - max ${section.eval.maxScore} pts`
+            : '';
+        return `Seccion ${index + 1}: ${section.name}\n${items}${evalText}`;
+    }).join('\n\n');
+}
 function SideLabel({ text }) {
     return (
         <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#64748b', letterSpacing: '0.6px', textTransform: 'uppercase', mb: 1.5 }}>
@@ -251,8 +309,7 @@ function SectionEditor({ section, index, onChange, onRemove }) {
                                     {/* Uploader solo para tipos con archivo */}
                                     {['video', 'pdf', 'image'].includes(c.type) && (
                                         <FileUploader
-                                            contentId={c.savedId ?? null}   // null hasta que el curso se guarde
-                                            contentType={c.type}
+                                            contentId={c.savedId}  contentType={c.type}  
                                             label={c.label}
                                             onUploaded={({ file_url }) =>
                                                 onChange({
@@ -327,12 +384,68 @@ function SectionEditor({ section, index, onChange, onRemove }) {
 
 
 // ─── Componente principal ─────────────────────────────────────────────────────
-function TutorCourseCreate() {
+function TutorCourseEdit() {
     const navigate = useNavigate();
-    const [coverPreview, setCoverPreview] = useState(null);
-    const [coverFile, setCoverFile] = useState(null);
-
+    const [coverFile, setCoverFile] = useState(null);       
+    const [coverPreview, setCoverPreview] = useState(null); 
+    const { id } = useParams();
     const [categories, setCategories] = useState([]);
+    const [formData, setFormData] = useState({
+        title: '', description: '', category: '', duration: '',
+        level: 'beginner', objectives: '', preview_video: '', language: 'Español',
+    });
+
+    const [sections, setSections] = useState([
+        {
+            id: 1, name: 'Introducción', open: true,
+            contents: [
+                { id: 1, type: 'video', label: 'Bienvenida al curso' },
+                { id: 2, type: 'pdf', label: 'Guía de instalación.pdf' },
+            ],
+            hasEval: false,
+            eval: { name: '', maxScore: 100, minScore: 60, attempts: '1', instructions: '' },
+        },
+    ]);
+    const [hasCover, setHasCover] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+
+    useEffect(() => {
+        const loadCourse = async () => {
+            try {
+                const course = await getCourseDetail(id);
+                console.log("COURSE", course);
+                setFormData({
+                    title: course.title || "",
+                    description: course.description || "",
+                    category: course.category || "",
+                    duration: course.duration || "",
+                    level: course.level || "beginner",
+                    objectives: course.objectives || "",
+                    preview_video: course.preview_video || "",
+                    language: course.language || "Español",
+                });
+
+                const loadedSections = normalizeSections(course.sections || []);
+                if (loadedSections.length > 0) {
+                    setSections(loadedSections);
+                }
+
+                setHasCover(!!course.cover_image);
+
+                if (course.cover_image) {
+                    setCoverPreview(course.cover_image);
+                }
+
+            } catch (error) {
+                console.error(error);
+                setError("No se pudo cargar el curso");
+            }
+        };
+
+        loadCourse();
+    }, [id]);
 
     useEffect(() => {
         const fetchCategories = async () => {
@@ -348,61 +461,6 @@ function TutorCourseCreate() {
 
 
 
-    const savedDraft = (() => {
-        if (typeof sessionStorage === 'undefined') return null;
-        const stored = sessionStorage.getItem('courseDraft');
-        if (!stored) return null;
-        try {
-            return JSON.parse(stored);
-        } catch {
-            return null;
-        }
-    })();
-
-    const [formData, setFormData] = useState(savedDraft?.formData ?? {
-        title: '', description: '', category: '', duration: '',
-        level: 'beginner', objectives: '', preview_video: '', language: 'Español',
-    });
-
-    const [sections, setSections] = useState(savedDraft?.sections ?? [
-        {
-            id: 1, name: 'Introducción', open: true,
-            contents: [
-                { id: 1, type: 'video', label: 'Bienvenida al curso' },
-                { id: 2, type: 'pdf', label: 'Guía de instalación.pdf' },
-            ],
-            hasEval: false,
-            eval: { name: '', maxScore: 100, minScore: 60, attempts: '1', instructions: '' },
-        },
-    ]);
-
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
-
-    const [savedCourseId, setSavedCourseId] = useState(null);
-    console.log("savedCourseId =", savedCourseId);
-
-    // 1. Cargar datos guardados al entrar a la página
-
-    useEffect(() => {
-        return () => {
-            if (window.location.pathname.includes('/tutor/courses/create')) {
-                sessionStorage.removeItem('courseDraft');
-            }
-        };
-    }, []);
-
-    // 2. Guardar automáticamente cada vez que haya un cambio
-    useEffect(() => {
-        if (formData.title !== '' || sections.length > 0) {
-            sessionStorage.setItem('courseDraft', JSON.stringify({
-                formData,
-                sections,
-                savedCourseId
-            }));
-        }
-    }, [formData, sections, savedCourseId]);
 
     const field = (key) => (e) => setFormData((p) => ({ ...p, [key]: e.target.value }));
     const update = (id, val) => setSections((p) => p.map((s) => s.id === id ? val : s));
@@ -418,139 +476,60 @@ function TutorCourseCreate() {
         return '';
     };
 
-    const buildInitialContent = () =>
-        sections.map((s, i) => {
-            const items = s.contents.map((c) => `  - [${c.type.toUpperCase()}] ${c.label}`).join('\n');
-            const evalStr = s.hasEval ? `\n  [EVALUACIÓN] ${s.eval.name || 'Sin nombre'} · máx ${s.eval.maxScore} pts` : '';
-            return `Sección ${i + 1}: ${s.name}\n${items}${evalStr}`;
-        }).join('\n\n');
 
     const handleSubmit = async (mode = 'draft') => {
-        setError('');
-        setSuccess('');
+        setError("");
+        setSuccess("");
+
         const err = validate();
-        if (err) { setError(err); return; }
+        if (err) {
+            setError(err);
+            return;
+        }
+
         setLoading(true);
 
         try {
-            // 1. Enviamos la petición al backend
-            const payload = {
+            const result = await updateTutorCourse(id, {
                 title: formData.title,
                 description: formData.description,
                 category: Number(formData.category),
                 duration: Number(formData.duration),
-                initial_content: buildInitialContent(),
+                initial_content: buildInitialContent(sections),
                 level: formData.level,
                 objectives: formData.objectives,
                 preview_video: formData.preview_video,
                 language: formData.language,
-
-                status:
-                    mode === "review"
-                        ? "pending"
-                        : "draft",
-
-                sections_meta: sections.map((s) => ({
-                    name: s.name,
-                    contents: s.contents.map((c) => ({
-                        type: c.type,
-                        label: c.label,
-                    })),
-                    evaluation: s.hasEval
-                        ? s.eval
-                        : null,
-                })),
-            };
-
-            let result;
-
-            console.log("ID ACTUAL:", savedCourseId);
-
-            if (savedCourseId) {
-                console.log("ACTUALIZANDO CURSO");
-
-                result = await updateTutorCourse(
-                    savedCourseId,
-                    payload
-                );
-
-            } else {
-
-                console.log("CREANDO CURSO NUEVO");
-
-                result = await createTutorCourse(
-                    payload
-                );
-            }
-
-            console.log("RESPUESTA DEL BACKEND:", result);
-
-            const savedCourse = result.course ?? result;
-
-            if (!savedCourse?.id) {
-                console.error("Respuesta inesperada del backend:", result);
-                throw new Error("El backend no devolvió el ID del curso.");
-            }
-
-            setSavedCourseId(savedCourse.id);
+                sections_meta: buildSectionsPayload(sections),
+            });
 
             if (coverFile) {
-                await uploadCourseCover(savedCourse.id, coverFile);
+                const coverResult = await uploadCourseCover(id, coverFile);
+                setCoverPreview(coverResult.cover_url || coverPreview);
             }
 
-            // 2. Mapeo inteligente sin perder el estado de los archivos (file_url)
-            const savedSections = savedCourse.sections ?? [];
+        if (result.course?.sections?.length > 0) {
+            setSections(normalizeSections(result.course.sections));
+        }
 
-            setSections((prevSections) =>
-                prevSections.map((localSec) => {
-                    // Buscamos la sección en la DB que coincida por nombre
-                    const dbSec = savedSections.find(
-                        (ds) => ds.name.trim().toLowerCase() === localSec.name.trim().toLowerCase()
-                    );
+            setSuccess(mode === "draft" ? "Curso actualizado exitosamente." : "Curso actualizado correctamente");
 
-                    return {
-                        ...localSec,
-                        id: dbSec?.id ?? localSec.id,
-                        contents: localSec.contents.map((localContent) => {
-                            // Buscamos el contenido que coincida en tipo y label
-                            const dbContent = dbSec?.contents?.find(
-                                (dc) => dc.type === localContent.type && dc.label === localContent.label
-                            );
-
-                            return {
-                                ...localContent,
-                                savedId: dbContent?.id ?? localContent.savedId ?? null,
-                                file_url: dbContent?.file_url ?? localContent.file_url ?? null
-                            };
-                        }),
-                    };
-                })
-            );
-
-            // 3. Mostramos mensaje de éxito correspondiente
-            setSuccess(
-                mode === 'draft'
-                    ? 'Borrador guardado. Ya puedes subir los archivos en las secciones.'
-                    : 'Curso enviado a revisión exitosamente.'
-            );
-
-            // 4. Redirección condicional (Solo si no es borrador)
-
-
-            if (mode === "review") {
-                sessionStorage.removeItem('courseDraft');
-
-                setTimeout(() => {
-                    navigate('/tutor/courses');
-                }, 1000);
-            }
+            setTimeout(() => {
+                navigate("/tutor/courses");
+            }, 1500);
 
         } catch (e) {
-            console.error("Error al guardar el curso:", e);
-            if (e.response?.status === 401) setError('Debes iniciar sesión para crear un curso.');
-            else if (e.response?.status === 403) setError('Solo los tutores pueden crear cursos.');
-            else if (e.response?.data) setError(JSON.stringify(e.response.data));
-            else setError('Ocurrió un error al guardar el curso. Inténtalo nuevamente.');
+            console.error(e);
+
+            if (e.response?.status === 403) {
+                setError("No tienes permiso para editar este curso");
+            } else if (e.response?.status === 404) {
+                setError("Curso no encontrado");
+            } else if (e.response?.data) {
+                setError(typeof e.response.data === "string" ? e.response.data : JSON.stringify(e.response.data));
+            } else {
+                setError("Error al actualizar el curso");
+            }
         } finally {
             setLoading(false);
         }
@@ -594,6 +573,7 @@ function TutorCourseCreate() {
                     }} />
 
                     <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
+                        
                         <Button
                             startIcon={<ArrowBackIcon />}
                             onClick={() => navigate('/tutor/courses')}
@@ -605,6 +585,7 @@ function TutorCourseCreate() {
                             Mis cursos
                         </Button>
 
+                        
                         <Box sx={{
                             display: 'flex',
                             alignItems: 'center',
@@ -615,12 +596,13 @@ function TutorCourseCreate() {
                         }}>
                             <Typography variant="h5"
                                 sx={{ fontWeight: 800, color: '#ffffff', letterSpacing: '-0.5px', fontSize: { xs: '1.35rem', md: '1.6rem' } }}>
-                                Crear nuevo curso
+                                Editar curso
                             </Typography>
                             <Chip label="Borrador" size="small"
                                 sx={{ background: '#fef3c7', color: '#92400e', fontWeight: 700, fontSize: 11, border: '1px solid #fcd34d' }} />
                         </Box>
 
+                        
                         <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: 13.5, textAlign: 'center' }}>
                             Completa la información y organiza las secciones de tu curso.
                         </Typography>
@@ -753,7 +735,7 @@ function TutorCourseCreate() {
                         <Grid item xs={12} md={4}>
                             <Stack spacing={2} sx={{ position: { md: 'sticky' }, top: { md: 24 } }}>
 
-                                <ProgressSidebar formData={formData} hasCover={!!coverPreview} />
+                                <ProgressSidebar formData={formData} hasCover={hasCover} />
 
                                 {/* Portada */}
                                 <Card sx={cardSx}>
@@ -771,7 +753,7 @@ function TutorCourseCreate() {
                                                 if (file) {
                                                     setCoverFile(file);
                                                     setCoverPreview(URL.createObjectURL(file));
-                                                    setCoverFile(file);
+                                                    setHasCover(true);
                                                 }
                                             }}
                                         />
@@ -835,7 +817,7 @@ function TutorCourseCreate() {
                                         '&:hover': { backgroundColor: TEAL_MID, boxShadow: '0 6px 18px rgba(15,118,110,0.38)' },
                                         '&.Mui-disabled': { background: '#e2e8f0', boxShadow: 'none' }
                                     }}>
-                                    Guardar borrador
+                                    Guardar cambios
                                 </Button>
 
                                 <Button fullWidth variant="outlined" size="large"
@@ -858,4 +840,5 @@ function TutorCourseCreate() {
     );
 }
 
-export default TutorCourseCreate;
+export default TutorCourseEdit;
+

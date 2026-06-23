@@ -1,23 +1,25 @@
+
+from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
+
+from .serializers import CourseEditSerializer
+from .permissions import IsTutor, IsCourseOwner
+
+
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.parsers import FormParser, MultiPartParser
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
+
 from rest_framework.views import APIView
-
-
-from .models import SectionContent, Course
-from .permissions import IsTutor
 from .serializers import SectionContentUploadSerializer, TutorCourseCreateSerializer
 
-from rest_framework import generics
 from rest_framework.permissions import AllowAny 
 from .models import SectionContent, Course, CourseSection, Category
 from .serializers import CategorySerializer
 
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+
 
 
 class CategoryListView(generics.ListAPIView):
@@ -132,7 +134,6 @@ class TutorCourseDetailView(APIView):
     permission_classes = [IsAuthenticated, IsTutor]
 
     def put(self, request, pk):
-        
         course = get_object_or_404(Course, pk=pk, tutor=request.user)
         
         
@@ -173,7 +174,6 @@ class TutorCourseDetailView(APIView):
                     defaults={'order': idx}
                 )
 
-       
         return Response({
             'message': 'Curso actualizado exitosamente.',
             'course': {
@@ -192,6 +192,51 @@ class TutorCourseDetailView(APIView):
                 ],
             },
         }, status=status.HTTP_200_OK)
+
+    
+    def get(self, request, pk):
+        course = get_object_or_404(
+            Course,
+            pk=pk,
+            tutor=request.user
+        )
+
+        return Response({
+            "id": course.id,
+            "title": course.title,
+            "description": course.description,
+            "category": course.category_id,
+            "duration": course.duration,
+            "level": course.level,
+            "objectives": course.objectives,
+            "preview_video": course.preview_video,
+            "language": course.language,
+
+            "cover_image": (
+                request.build_absolute_uri(course.cover_image.url)
+                if course.cover_image else None
+            ),
+
+            "sections": [
+                {
+                    "id": section.id,
+                    "name": section.name,
+                    "contents": [
+                        {
+                            "id": content.id,
+                            "type": content.type,
+                            "label": content.label,
+                            "file_url": (
+                                request.build_absolute_uri(content.file.url)
+                                if content.file else None
+                            )
+                        }
+                        for content in section.contents.all()
+                    ]
+                }
+                for section in course.sections.prefetch_related("contents")
+            ]
+        })
     
 class TutorCoursesListView(APIView):
     permission_classes = [IsAuthenticated, IsTutor]
@@ -218,3 +263,21 @@ class TutorCoursesListView(APIView):
             }
             for course in courses
         ])
+
+
+class TutorCourseUpdateView(generics.RetrieveUpdateAPIView):
+    """
+    GET   /api/tutor/courses/{id}/  → precarga datos del curso en el formulario
+    PUT   /api/tutor/courses/{id}/  → edición completa
+    PATCH /api/tutor/courses/{id}/  → edición parcial
+
+    Reglas:
+    - Solo tutores autenticados.
+    - Solo el tutor dueño del curso puede editarlo (cursos ajenos devuelven 404).
+    - Solo se puede editar si el curso está en 'draft' o 'rejected'.
+    """
+    serializer_class = CourseEditSerializer
+    permission_classes = [IsAuthenticated, IsTutor, IsCourseOwner]
+
+    def get_queryset(self):
+        return Course.objects.filter(tutor=self.request.user)

@@ -26,7 +26,7 @@ class Course(models.Model):
     description = models.TextField()
     
     cover_image = models.ImageField(upload_to='courses/covers/', null=True, blank=True)
-    
+
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
@@ -128,14 +128,14 @@ class SectionContent(models.Model):
     label    = models.CharField(max_length=200)
     order    = models.PositiveIntegerField(default=0)
 
-    # El archivo real (puede estar vacío si type=text o type=quiz)
+    
     file     = models.FileField(
         upload_to=content_upload_path,
         blank=True,
         null=True
     )
 
-    # Texto enriquecido (solo para type=text)
+    
     body     = models.TextField(blank=True)
 
     class Meta:

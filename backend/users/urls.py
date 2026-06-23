@@ -19,6 +19,12 @@ urlpatterns = [
         StudentRegisterView.as_view(),
         name="register-student"
     ),
+
+     path(
+        "users/",
+        UserListView.as_view(),
+        name="user-list"
+    ),
     path(
         "auth/register/tutor/",
         TutorRegisterView.as_view(),

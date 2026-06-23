@@ -1,41 +1,24 @@
-<<<<<<< HEAD
 from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-=======
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 
->>>>>>> 7e1d5f851c6096ea9930f882a02babab209c2f94
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 
-<<<<<<< HEAD
-from .serializers import LoginSerializer, UserListSerializer
 from .permissions import IsAdmin
 
-User = get_user_model()
-
-
-class LoginView(APIView):
-    """
-    POST /api/login/
-    Permite iniciar sesión y retorna los tokens JWT del usuario.
-    """
-
-    def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-=======
 from .serializers import (
     LoginSerializer,
     StudentRegisterSerializer,
     TutorRegisterSerializer,
+    UserListSerializer,
+    
 )
 
+User = get_user_model()
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
@@ -48,7 +31,6 @@ class LoginView(APIView):
         serializer.is_valid(
             raise_exception=True
         )
->>>>>>> 7e1d5f851c6096ea9930f882a02babab209c2f94
 
         user = serializer.validated_data["user"]
         refresh = RefreshToken.for_user(user)
@@ -59,9 +41,8 @@ class LoginView(APIView):
             "user": {
                 "id": user.id,
                 "username": user.username,
-<<<<<<< HEAD
-                "role": user.role,
-            },
+                "role": user.role
+            }
         })
 
 
@@ -84,11 +65,6 @@ class UserListView(generics.ListAPIView):
             queryset = queryset.filter(role=role)
 
         return queryset
-=======
-                "role": user.role
-            }
-        })
-
 
 class StudentRegisterView(APIView):
     permission_classes = [AllowAny]
@@ -148,4 +124,3 @@ class TutorRegisterView(APIView):
             },
             status=status.HTTP_201_CREATED
         )
->>>>>>> 7e1d5f851c6096ea9930f882a02babab209c2f94

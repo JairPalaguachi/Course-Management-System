@@ -2,6 +2,7 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
 
+// Helper interno — usa la clave 'access' que ya tienes en localStorage
 const getAuthHeader = () => ({
   Authorization: `Bearer ${localStorage.getItem('access')}`,
 });
@@ -67,5 +68,16 @@ export const uploadCourseCover = async (courseId, file) => {
             'Content-Type': 'multipart/form-data',
         },
     });
+    return response.data;
+};
+
+export const getTutorCourses = async () => {
+    const response = await axios.get(
+        `${API_URL}/tutor/courses/list/`,
+        {
+            headers: getAuthHeader(),
+        }
+    );
+
     return response.data;
 };

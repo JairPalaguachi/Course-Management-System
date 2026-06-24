@@ -1,4 +1,4 @@
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
 from rest_framework import serializers
 
 from .models import User
@@ -23,6 +23,15 @@ class LoginSerializer(serializers.Serializer):
         return attrs
 
 
+class UserListSerializer(serializers.ModelSerializer):
+    nombre = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ["id", "nombre", "email", "role", "is_active"]
+
+    def get_nombre(self, obj):
+        return obj.get_full_name() or obj.username
 class TutorRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         write_only=True,

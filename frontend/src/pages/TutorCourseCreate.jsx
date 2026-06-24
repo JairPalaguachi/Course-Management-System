@@ -377,10 +377,12 @@ function TutorCourseCreate() {
     const [success, setSuccess] = useState('');
 
     const [savedCourseId, setSavedCourseId] = useState(savedDraft?.savedCourseId ?? null);
+    const [shouldSaveDraft, setShouldSaveDraft] = useState(true);
 
 
     // 2. Guardar automáticamente cada vez que haya un cambio
     useEffect(() => {
+        if (!shouldSaveDraft) return;
         if (formData.title !== '' || sections.length > 0) {
             sessionStorage.setItem('courseDraft', JSON.stringify({
                 formData,
@@ -388,7 +390,7 @@ function TutorCourseCreate() {
                 savedCourseId
             }));
         }
-    }, [formData, sections, savedCourseId]);
+    }, [formData, sections, savedCourseId, shouldSaveDraft]);
 
     const field = (key) => (e) => setFormData((p) => ({ ...p, [key]: e.target.value }));
     const update = (id, val) => setSections((p) => p.map((s) => s.id === id ? val : s));
@@ -485,7 +487,13 @@ function TutorCourseCreate() {
                     : 'Curso enviado a revisión exitosamente.'
             );
 
-            // 4. Redirección condicional (Solo si no es borrador)
+            // 4. Limpiar el draft del sessionStorage y desactivar auto-save
+            if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.removeItem('courseDraft');
+            }
+            setShouldSaveDraft(false);
+
+            // 5. Redirección condicional (Solo si no es borrador)
             if (mode !== 'draft') {
                 setTimeout(() => navigate('/tutor/courses'), 1500);
             }

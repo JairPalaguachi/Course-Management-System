@@ -22,7 +22,6 @@ import SendIcon from '@mui/icons-material/Send';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import UploadIcon from '@mui/icons-material/Upload';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
-import DoneAllIcon from '@mui/icons-material/DoneAll';
 
 import FileUploader from '../components/FileUploader';
 import {

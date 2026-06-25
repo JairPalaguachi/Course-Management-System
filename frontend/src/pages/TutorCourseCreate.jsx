@@ -387,6 +387,7 @@ function TutorCourseCreate() {
 
     useEffect(() => {
         return () => {
+        //  Si entramos a la ruta de creación pura, limpiamos CUALQUIER residuo viejo del tirón
             if (window.location.pathname.includes('/tutor/courses/create')) {
                 sessionStorage.removeItem('courseDraft');
             }
@@ -537,19 +538,17 @@ function TutorCourseCreate() {
                     ? 'Borrador guardado. Ya puedes subir los archivos en las secciones.'
                     : 'Curso enviado a revisión exitosamente.'
             );
+            setShouldSaveDraft(false);
 
-            // 4. Limpiar el draft del sessionStorage y desactivar auto-save
-            if (mode === "review") {
-                if (typeof sessionStorage !== 'undefined') {
-                    sessionStorage.removeItem('courseDraft');
-                }
-                setShouldSaveDraft(false);
-
-                // 5. Redirección condicional
-                setTimeout(() => {
-                    navigate('/tutor/courses');
-                }, 1000);
+            // 🧹 2. LIMPIEZA INMEDIATA DEL STORAGE
+            if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.removeItem('courseDraft');
             }
+            
+            // Usamos 400ms para que alcancen a ver el aviso verde de éxito antes de salir
+            setTimeout(() => {
+                navigate('/tutor/courses');
+            }, 400);
 
         } catch (e) {
             console.error("Error al guardar el curso:", e);

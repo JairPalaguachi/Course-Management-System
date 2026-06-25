@@ -22,6 +22,7 @@ import SendIcon from '@mui/icons-material/Send';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import UploadIcon from '@mui/icons-material/Upload';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
+import DoneAllIcon from '@mui/icons-material/DoneAll';
 
 import FileUploader from '../components/FileUploader';
 import {
@@ -84,20 +85,23 @@ const CONTENT_TYPES = [
 const CONTENT_ICON = { video: <VideoLibraryIcon />, pdf: <PictureAsPdfIcon />, image: <ImageIcon />, text: <TextSnippetIcon />, quiz: <QuizIcon /> };
 const CONTENT_COLOR = { video: '#7c3aed', pdf: '#b45309', image: '#0891b2', text: '#475569', quiz: '#059669' };
 
-let _sectionId = 2;
+//let _sectionId = 2;
 let _contentId = 10;
 
-function makeSection() {
-    const id = _sectionId++;
-    return {
-        id,
-        name: `Sección ${id - 1}`,
-        open: true,
-        contents: [],
-        hasEval: false,
-        eval: { name: '', maxScore: 100, minScore: 60, attempts: '1', instructions: '' },
-    };
-}
+const makeSection = () => ({
+    id: Date.now(),
+    name: 'Sección nueva',
+    open: true,
+    contents: [],
+    hasEval: false,
+    eval: {
+        name: '',
+        maxScore: 100,
+        minScore: 60,
+        attempts: '1',
+        instructions: '',
+    },
+});
 
 function makeContent(type) {
     const labels = { video: 'Clase grabada', pdf: 'Documento.pdf', image: 'Recurso visual', text: 'Contenido de texto', quiz: 'Quiz de sección' };
@@ -110,14 +114,14 @@ function normalizeSections(courseSections = []) {
         id: section.id ? `saved-section-${section.id}` : `section-${index}`,
         savedId: section.id ?? null,
         name: section.name || `Seccion ${index + 1}`,
-        open: true,
+        open: false,
         contents: (section.contents || []).map((content, contentIndex) => ({
             id: content.id ? `saved-content-${content.id}` : `content-${index}-${contentIndex}`,
             savedId: content.id ?? null,
             type: content.type,
             label: content.label || '',
             body: content.body || '',
-            file_url: content.file_url || null,
+            file_url: content.file_url || content.file || null
         })),
         hasEval: Boolean(section.evaluation),
         eval: {
@@ -306,20 +310,68 @@ function SectionEditor({ section, index, onChange, onRemove }) {
                                         </IconButton>
                                     </Box>
 
-                                    {/* Uploader solo para tipos con archivo */}
+                                    {/* 📥 CONDICIONAL: Si el archivo ya existe muestra éxito, si no, el Uploader */}
                                     {['video', 'pdf', 'image'].includes(c.type) && (
-                                        <FileUploader
-                                            contentId={c.savedId}  contentType={c.type}  
-                                            label={c.label}
-                                            onUploaded={({ file_url }) =>
-                                                onChange({
-                                                    ...section,
-                                                    contents: section.contents.map((x) =>
-                                                        x.id === c.id ? { ...x, file_url } : x
-                                                    ),
-                                                })
-                                            }
-                                        />
+                                        <Box sx={{ mt: 1 }}>
+                                            {c.file_url ? (
+                                                /* 🎉 Caso 1: El archivo ya está guardado en el backend o subido */
+                                                <Box sx={{ 
+                                                    display: 'flex', 
+                                                    alignItems: 'center', 
+                                                    justifyContent: 'space-between',
+                                                    background: '#f0fdfa', // Fondo verde sutil
+                                                    border: '1px solid #99f6e4', 
+                                                    borderRadius: 2, 
+                                                    px: 1.5, 
+                                                    py: 1 
+                                                }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, flex: 1 }}>
+                                                        <CheckCircleIcon sx={{ fontSize: 16, color: TEAL, flexShrink: 0 }} />
+                                                        <Typography 
+                                                            noWrap // 👈 Evita que nombres larguísimos rompan el diseño, les pone "..."
+                                                            sx={{ 
+                                                                fontSize: 12, 
+                                                                color: TEAL, 
+                                                                fontWeight: 600,
+                                                                textDecoration: 'none'
+                                                            }}
+                                                        >
+                                                            {/* 🔄 Muestra c.file_name si existe; si no, extrae el nombre del final de la URL */}
+                                                            {c.file_name || (typeof c.file_url === 'string' ? decodeURIComponent(c.file_url.split('/').pop().split('?')[0]) : 'Archivo cargado')}
+                                                        </Typography>
+                                                    </Box>
+                                                    
+                                                    {/* Botón para vaciar la url por si quiere volver a subir otro archivo */}
+                                                        <IconButton 
+                                                            size="small" 
+                                                            onClick={() => onChange({
+                                                                ...section,
+                                                                contents: section.contents.map((x) => 
+                                                                    x.id === c.id ? { ...x, file_url: null, file_name: null } : x
+                                                                )
+                                                            })}
+                                                            sx={{ color: '#cbd5e1', '&:hover': { color: '#e11d48' }, ml: 1, flexShrink: 0 }}
+                                                        >
+                                                            <DeleteOutlineIcon sx={{ fontSize: 15 }} />
+                                                        </IconButton>
+                                                </Box>
+                                            ) : (
+                                                /* 📥 Caso 2: No hay archivo, renderiza el componente para subirlo */
+                                                <FileUploader
+                                                    contentId={c.savedId}  
+                                                    contentType={c.type}  
+                                                    label={c.label}
+                                                    onUploaded={({ file_url, file_name }) => // 👈 Si el uploader te da el nombre, lo atrapamos aquí
+                                                        onChange({
+                                                            ...section,
+                                                            contents: section.contents.map((x) =>
+                                                                x.id === c.id ? { ...x, file_url, file_name: file_name || null } : x
+                                                            ),
+                                                        })
+                                                    }
+                                                />
+                                            )}
+                                        </Box>
                                     )}
                                 </Box>
                             ))}
@@ -415,7 +467,6 @@ function TutorCourseEdit() {
         const loadCourse = async () => {
             try {
                 const course = await getCourseDetail(id);
-                console.log("COURSE", course);
                 setFormData({
                     title: course.title || "",
                     description: course.description || "",
@@ -508,15 +559,25 @@ function TutorCourseEdit() {
                 setCoverPreview(coverResult.cover_url || coverPreview);
             }
 
-        if (result.course?.sections?.length > 0) {
-            setSections(normalizeSections(result.course.sections));
-        }
+            if (result.course?.sections?.length > 0) {
+                setSections(normalizeSections(result.course.sections));
+            } else if (result.sections?.length > 0) {
+            
+                setSections(normalizeSections(result.sections));
+            }
 
             setSuccess(mode === "draft" ? "Curso actualizado exitosamente." : "Curso actualizado correctamente");
 
-            setTimeout(() => {
-                navigate("/tutor/courses");
-            }, 1500);
+            // 🔄 REDIRECCIÓN CONDICIONAL:
+            if (mode === 'review') {
+                // Si va a revisión, sí lo sacamos de la pantalla porque ya terminó por completo
+                setTimeout(() => {
+                    navigate("/tutor/courses");
+                }, 1500);
+            } else {
+                // Si es un guardado normal ('draft'), apagamos el estado de carga para que pueda seguir editando
+                setLoading(false);
+            }
 
         } catch (e) {
             console.error(e);
@@ -807,6 +868,23 @@ function TutorCourseEdit() {
                                 </Card>
 
                                 {/* Acciones */}
+                                {/* 💡 Mensaje recordatorio encuadrado perfectamente */}
+                                <Typography 
+                                    variant="caption" 
+                                    sx={{ 
+                                        color: 'text.secondary', 
+                                        textAlign: 'center', 
+                                        fontStyle: 'italic',
+                                        fontWeight: 500,
+                                        px: 1, 
+                                        lineHeight: 1.4,
+                                        display: 'block',
+                                        whiteSpace: 'normal', // 👈 Fuerza el salto de línea si el texto es largo
+                                        width: '100%'
+                                    }}
+                                >
+                                    ⚠️ Recuerda guardar tus cambios antes de finalizar la edición.
+                                </Typography>
                                 <Button fullWidth variant="contained" size="large"
                                     startIcon={loading ? <CircularProgress size={15} sx={{ color: '#fff' }} /> : <SaveIcon />}
                                     onClick={() => handleSubmit('draft')} disabled={loading}
@@ -829,6 +907,27 @@ function TutorCourseEdit() {
                                         '&:hover': { background: TEAL_LIGHT, borderColor: TEAL_MID }
                                     }}>
                                     Enviar a revisión
+                                </Button>
+
+                                {/* ✨ Botón Finalizar Edición formateado idéntico a los anteriores */}
+                                <Button fullWidth variant="outlined" size="large"
+                                    startIcon={<CheckCircleIcon />} 
+                                    onClick={() => {
+                                        // 1. Ejecuta el guardado normal (así asegura los cambios)
+                                        handleSubmit('draft'); 
+                                        
+                                        // 2. Obliga a redirigir inmediatamente después de un breve delay para que termine el proceso
+                                        setTimeout(() => {
+                                            navigate('/tutor/courses');
+                                        }, 1000); // 1 segundo es suficiente para que la petición viaje segura
+                                    }} 
+                                    disabled={loading}
+                                    sx={{
+                                        py: 1.4, borderRadius: 3, fontWeight: 600, textTransform: 'none', fontSize: 13,
+                                        borderColor: TEAL, color: TEAL,
+                                        '&:hover': { background: TEAL_LIGHT, borderColor: TEAL_MID }
+                                    }}>
+                                    Finalizar Edición
                                 </Button>
 
                             </Stack>

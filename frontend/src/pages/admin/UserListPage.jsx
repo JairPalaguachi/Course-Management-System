@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // <-- Nuevo import para navegación
 import { getUsers } from "../../services/userService";
 import {
   Box,
@@ -19,9 +20,11 @@ import {
   Alert,
   Paper,
   Stack,
+  Button, // <-- Nuevo import
 } from "@mui/material";
 import GroupsIcon from "@mui/icons-material/Groups";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack"; // <-- Nuevo import para el ícono
 
 const ROLES = [
   { value: "", label: "Todos los roles" },
@@ -73,6 +76,7 @@ function StatusBadge({ active }) {
 }
 
 export default function UserListPage() {
+  const navigate = useNavigate(); // <-- Inicializamos el hook de navegación
   const [users, setUsers] = useState([]);
   const [roleFilter, setRoleFilter] = useState("");
   const [loading, setLoading] = useState(false);
@@ -112,7 +116,6 @@ export default function UserListPage() {
         overflowX: "hidden",
       }}
     >
-
       {/* ── Page header ── */}
       <Box
         sx={{
@@ -140,6 +143,26 @@ export default function UserListPage() {
         />
 
         <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1 }}>
+          
+          {/* ── Botón de Regreso ── */}
+          <Button
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate("/admin/dashboard")}
+            disableElevation
+            sx={{
+              color: "rgba(255,255,255,0.7)",
+              mb: 3,
+              textTransform: "none",
+              fontWeight: 500,
+              "&:hover": {
+                color: "#ffffff",
+                backgroundColor: "rgba(255,255,255,0.1)",
+              },
+            }}
+          >
+            Regresar al Dashboard
+          </Button>
+
           <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 1 }}>
             <Box
               sx={{

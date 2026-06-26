@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/useAuth";
 import {
     Box,
     Button,
@@ -13,6 +14,7 @@ import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
 import PlayLessonIcon from "@mui/icons-material/PlayLesson";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import ForumIcon from "@mui/icons-material/Forum";
+import LogoutIcon from "@mui/icons-material/Logout";
 
 const TUTOR_FEATURES = [
     {
@@ -38,7 +40,13 @@ const QUICK_STATS = [
 ];
 
 function TutorDashboard() {
+    const { logout } = useAuth();
     const navigate = useNavigate();
+
+    const handleLogout = () => {
+        logout();
+        navigate("/login");
+    };
 
     return (
         <Box
@@ -78,6 +86,29 @@ function TutorDashboard() {
                 }} />
 
                 <Container maxWidth="md" sx={{ position: "relative", zIndex: 1, textAlign: "center" }}>
+
+                    {/* Botón cerrar sesión */}
+                    <Box sx={{ position: "absolute", top: 0, right: 16 }}>
+                        <Button
+                            startIcon={<LogoutIcon />}
+                            onClick= {handleLogout}
+                            sx={{
+                                color: "rgba(255,255,255,0.7)",
+                                textTransform: "none",
+                                fontWeight: 600,
+                                borderRadius: 2,
+                                px: 2,
+                                py: 0.8,
+                                "&:hover": {
+                                    backgroundColor: "rgba(255,255,255,0.08)",
+                                    color: "#ffffff",
+                                },
+                            }}
+                        >
+                            Cerrar sesión
+                        </Button>
+                    </Box>
+
                     {/* brand icon */}
                     <Box sx={{
                         display: "inline-flex", alignItems: "center", justifyContent: "center",

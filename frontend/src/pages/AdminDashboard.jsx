@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import {
@@ -95,7 +95,7 @@ function AdminDashboard() {
         logout();
         navigate("/login");
     };
-    const [pendingCourses, setPendingCourses] = useState(MOCK_PENDING_COURSES);
+    const [pendingCourses] = useState(MOCK_PENDING_COURSES);
 
     return (
         <Box

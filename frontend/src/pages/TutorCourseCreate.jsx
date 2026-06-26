@@ -387,14 +387,19 @@ function TutorCourseCreate() {
 
     useEffect(() => {
         return () => {
+        //  Si entramos a la ruta de creación pura, limpiamos CUALQUIER residuo viejo del tirón
             if (window.location.pathname.includes('/tutor/courses/create')) {
                 sessionStorage.removeItem('courseDraft');
             }
         };
-    }, []);
+    }, []);    
+    
+    const [shouldSaveDraft, setShouldSaveDraft] = useState(true);
+
 
     // 2. Guardar automáticamente cada vez que haya un cambio
     useEffect(() => {
+        if (!shouldSaveDraft) return;
         if (formData.title !== '' || sections.length > 0) {
             sessionStorage.setItem('courseDraft', JSON.stringify({
                 formData,
@@ -402,7 +407,7 @@ function TutorCourseCreate() {
                 savedCourseId
             }));
         }
-    }, [formData, sections, savedCourseId]);
+    }, [formData, sections, savedCourseId, shouldSaveDraft]);
 
     const field = (key) => (e) => setFormData((p) => ({ ...p, [key]: e.target.value }));
     const update = (id, val) => setSections((p) => p.map((s) => s.id === id ? val : s));
@@ -533,17 +538,17 @@ function TutorCourseCreate() {
                     ? 'Borrador guardado. Ya puedes subir los archivos en las secciones.'
                     : 'Curso enviado a revisión exitosamente.'
             );
+            setShouldSaveDraft(false);
 
-            // 4. Redirección condicional (Solo si no es borrador)
-
-
-            if (mode === "review") {
+            // 🧹 2. LIMPIEZA INMEDIATA DEL STORAGE
+            if (typeof sessionStorage !== 'undefined') {
                 sessionStorage.removeItem('courseDraft');
-
-                setTimeout(() => {
-                    navigate('/tutor/courses');
-                }, 1000);
             }
+            
+            // Usamos 400ms para que alcancen a ver el aviso verde de éxito antes de salir
+            setTimeout(() => {
+                navigate('/tutor/courses');
+            }, 400);
 
         } catch (e) {
             console.error("Error al guardar el curso:", e);

@@ -528,6 +528,7 @@ function TutorCourseEdit() {
 
 
     const handleSubmit = async (mode = 'draft') => {
+        const statusToSend = mode === 'review' ? 'pending' : mode;
         setError("");
         setSuccess("");
 
@@ -551,6 +552,7 @@ function TutorCourseEdit() {
                 preview_video: formData.preview_video,
                 language: formData.language,
                 sections_meta: buildSectionsPayload(sections),
+                status: statusToSend,
             });
 
             if (coverFile) {

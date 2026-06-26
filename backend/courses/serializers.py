@@ -278,7 +278,7 @@ class CourseEditSerializer(serializers.ModelSerializer):
             "sections",
             "sections_meta",
         ]
-        read_only_fields = ["id", "cover_image", "status", "created_at", "updated_at", "sections"]
+        read_only_fields = ["id", "cover_image", "created_at", "updated_at", "sections"]
 
     def validate(self, attrs):
         course = self.instance

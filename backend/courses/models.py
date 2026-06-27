@@ -17,10 +17,10 @@ class Category(models.Model):
 
 class Course(models.Model):
     class Status(models.TextChoices):
-        DRAFT = 'draft', 'Borrador'
-        PENDING = 'pending', 'Pendiente de aprobación'
-        PUBLISHED = 'published', 'Publicado'
-        REJECTED = 'rejected', 'Rechazado'
+        DRAFT = 'borrador', 'Borrador'
+        PENDING_APPROVAL = 'pendiente_aprobacion', 'Pendiente de aprobación'
+        PUBLISHED = 'publicado', 'Publicado'
+        REJECTED = 'rechazado', 'Rechazado'
 
     title = models.CharField(max_length=200)
     description = models.TextField()

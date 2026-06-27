@@ -45,16 +45,7 @@ class Course(models.Model):
         help_text="Duración del curso en horas"
     )
     initial_content = models.TextField()
-
-    level = models.CharField(
-        max_length=20,
-        choices=[
-            ("beginner", "Principiante"),
-            ("intermediate", "Intermedio"),
-            ("advanced", "Avanzado"),
-        ],
-        default="beginner",
-    )
+    
     objectives = models.TextField(blank=True)
     preview_video = models.URLField(blank=True)
     language = models.CharField(max_length=30, default="Español")

@@ -22,6 +22,9 @@ import SendIcon from '@mui/icons-material/Send';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import UploadIcon from '@mui/icons-material/Upload';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
+import {
+    Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions 
+} from '@mui/material';
 
 import FileUploader from '../components/FileUploader';
 import { createTutorCourse, updateTutorCourse, getCategories, uploadCourseCover } from '../services/courseService';
@@ -331,9 +334,8 @@ function TutorCourseCreate() {
     const navigate = useNavigate();
     const [coverPreview, setCoverPreview] = useState(null);
     const [coverFile, setCoverFile] = useState(null);
-
     const [categories, setCategories] = useState([]);
-console.log("Se ejecutó el useEffect");
+    const [openConfirmModal, setOpenConfirmModal] = useState(false);
     useEffect(() => {
         const fetchCategories = async () => {
             try {
@@ -846,7 +848,8 @@ console.log("Se ejecutó el useEffect");
 
                                 <Button fullWidth variant="outlined" size="large"
                                     startIcon={<SendIcon />}
-                                    onClick={() => handleSubmit('review')} disabled={loading}
+                                    onClick={() => setOpenConfirmModal(true)} 
+                                    disabled={loading}
                                     sx={{
                                         py: 1.4, borderRadius: 3, fontWeight: 600, textTransform: 'none', fontSize: 13,
                                         borderColor: TEAL, color: TEAL,
@@ -859,7 +862,48 @@ console.log("Se ejecutó el useEffect");
                         </Grid>
                     </Grid>
                 </Container>
+                
             </Box>
+            <Dialog 
+                open={openConfirmModal} 
+                onClose={() => setOpenConfirmModal(false)}
+                PaperProps={{
+                    sx: { borderRadius: 3, padding: 1 }
+                }}
+            >
+                <DialogTitle sx={{ fontWeight: 700, color: TEAL_DARK, pb: 1 }}>
+                    ¿Enviar a revisión?
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText sx={{ fontSize: 14, color: '#64748b' }}>
+                        ¿Estás seguro de que deseas enviar este curso a revisión? Una vez enviado, entrará a una cola de aprobación y su estado cambiará a "pendiente".
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button 
+                        onClick={() => setOpenConfirmModal(false)} 
+                        sx={{ color: '#94a3b8', textTransform: 'none', fontWeight: 600 }}
+                    >
+                        Cancelar
+                    </Button>
+                    <Button 
+                        onClick={() => {
+                            setOpenConfirmModal(false);
+                            handleSubmit('review');
+                        }} 
+                        variant="contained" 
+                        autoFocus
+                        sx={{
+                            backgroundColor: TEAL,
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            '&:hover': { backgroundColor: TEAL_MID }
+                        }}
+                    >
+                        Confirmar envío
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </>
     );
 }

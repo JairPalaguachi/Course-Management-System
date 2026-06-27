@@ -1,101 +1,329 @@
-from django.shortcuts import get_object_or_404
 from django.db import transaction
-
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
+from rest_framework import generics, status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Course
+from .models import Category, Course, CourseSection, SectionContent
+from .permissions import IsCourseOwner, IsTutor
+from .serializers import (
+    CategorySerializer,
+    CourseEditSerializer,
+    SectionContentUploadSerializer,
+    TutorCourseCreateSerializer,
+)
 
 
-class CourseDetailView(APIView):
-    permission_classes = [IsAuthenticated]
+class CategoryListView(generics.ListAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [AllowAny]
 
-    def get(self, request, pk):
-        if request.user.role != request.user.Role.TUTOR:
+
+class TutorCourseCreateView(APIView):
+    permission_classes = [IsAuthenticated, IsTutor]
+
+    def post(self, request):
+        serializer = TutorCourseCreateSerializer(
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        course = serializer.save()
+
+        return Response(
+            {
+                "message": "Curso creado exitosamente como borrador.",
+                "course": {
+                    "id": course.id,
+                    "status": course.status,
+                    "sections": [
+                        {
+                            "id": sec.id,
+                            "name": sec.name,
+                            "contents": [
+                                {"id": c.id, "type": c.type, "label": c.label}
+                                for c in sec.contents.all()
+                            ],
+                        }
+                        for sec in course.sections.prefetch_related("contents").all()
+                    ],
+                },
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class SectionContentUploadView(APIView):
+    """
+    POST /api/tutor/contents/<content_id>/upload/
+
+    Sube o reemplaza el archivo de un SectionContent.
+    Solo el tutor dueño del curso puede operar sobre sus propios contenidos.
+    """
+
+    permission_classes = [IsAuthenticated, IsTutor]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request, content_id):
+        content = get_object_or_404(
+            SectionContent,
+            id=content_id,
+            section__course__tutor=request.user,
+        )
+
+        if "file" not in request.FILES:
             return Response(
-                {"detail": "Solo un tutor puede consultar un curso."},
-                status=status.HTTP_403_FORBIDDEN,
+                {"error": "No se ha proporcionado ningún archivo bajo la clave 'file'."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
+        content.file = request.FILES["file"]
+        content.save()
+
+        return Response(
+            {
+                "message": "Archivo subido exitosamente.",
+                "content_id": content.id,
+                "file_url": request.build_absolute_uri(content.file.url) if content.file else None,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def upload_course_cover(request, pk):
+    try:
+        course = Course.objects.get(pk=pk, tutor=request.user)
+    except Course.DoesNotExist:
+        return Response({"error": "Curso no encontrado"}, status=404)
+
+    if "cover" not in request.FILES:
+        return Response({"error": "No se envió ninguna imagen"}, status=400)
+
+    course.cover_image = request.FILES["cover"]
+    course.save()
+
+    return Response(
+        {
+            "message": "Portada subida exitosamente",
+            "cover_url": course.cover_image.url,
+        }
+    )
+
+
+class TutorCourseDetailView(APIView):
+    """
+    Garantiza lectura (GET) detallada con metadatos completos y actualización (PUT)
+    manual de la estructura interna del curso (Secciones y Contenidos).
+    """
+
+    permission_classes = [IsAuthenticated, IsTutor]
+
+    def get(self, request, pk):
+        course = get_object_or_404(Course, pk=pk, tutor=request.user)
+        return Response(
+            {
+                "id": course.id,
+                "title": course.title,
+                "description": course.description,
+                "status": course.status,
+                "category": course.category_id,
+                "category_name": course.category.name if course.category else None,
+                "duration": course.duration,
+                "level": course.level,
+                "objectives": course.objectives,
+                "preview_video": course.preview_video,
+                "language": course.language,
+                "created_at": course.created_at,
+                "published_at": course.published_at,
+                "rejection_reason": course.rejection_reason,
+                "cover_image": (
+                    request.build_absolute_uri(course.cover_image.url)
+                    if course.cover_image
+                    else None
+                ),
+                "sections": [
+                    {
+                        "id": section.id,
+                        "name": section.name,
+                        "contents": [
+                            {
+                                "id": content.id,
+                                "type": content.type,
+                                "label": content.label,
+                                "file_url": (
+                                    request.build_absolute_uri(content.file.url)
+                                    if content.file
+                                    else None
+                                ),
+                            }
+                            for content in section.contents.all()
+                        ],
+                    }
+                    for section in course.sections.prefetch_related("contents").all()
+                ],
+            }
+        )
+
+    def put(self, request, pk):
         course = get_object_or_404(Course, pk=pk, tutor=request.user)
 
-        return Response({
-            "id": course.id,
-            "title": course.title,
-            "status": course.status,
-            "category": course.category.name if course.category else None,
-            "created_at": course.created_at,
-            "published_at": course.published_at,
-            "rejection_reason": course.rejection_reason,
-        })
+        course.title = request.data.get("title", course.title)
+        course.description = request.data.get("description", course.description)
+        if request.data.get("category"):
+            course.category_id = request.data.get("category")
+        course.duration = request.data.get("duration", course.duration)
+        course.level = request.data.get("level", course.level)
+        course.objectives = request.data.get("objectives", course.objectives)
+        course.preview_video = request.data.get("preview_video", course.preview_video)
+        course.language = request.data.get("language", course.language)
+        course.initial_content = request.data.get("initial_content", course.initial_content)
+        course.status = request.data.get("status", course.status)
+        course.save()
+
+        sections_data = request.data.get("sections_meta", [])
+
+        for sec_idx, sec_data in enumerate(sections_data):
+            section, created = CourseSection.objects.get_or_create(
+                course=course,
+                name=sec_data.get("name", f"Sección {sec_idx+1}"),
+                defaults={"order": sec_idx},
+            )
+
+            for idx, content_data in enumerate(sec_data.get("contents", [])):
+                content, c_created = SectionContent.objects.get_or_create(
+                    section=section,
+                    type=content_data.get("type"),
+                    label=content_data.get("label"),
+                    defaults={"order": idx},
+                )
+
+        return Response(
+            {
+                "message": "Curso actualizado exitosamente.",
+                "course": {
+                    "id": course.id,
+                    "status": course.status,
+                    "sections": [
+                        {
+                            "id": sec.id,
+                            "name": sec.name,
+                            "contents": [
+                                {"id": c.id, "type": c.type, "label": c.label}
+                                for c in sec.contents.all()
+                            ],
+                        }
+                        for sec in course.sections.prefetch_related("contents").all()
+                    ],
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class TutorCoursesListView(APIView):
+    permission_classes = [IsAuthenticated, IsTutor]
+
+    def get(self, request):
+        courses = Course.objects.filter(tutor=request.user).order_by("-created_at")
+        return Response(
+            [
+                {
+                    "id": course.id,
+                    "title": course.title,
+                    "description": course.description,
+                    "status": course.status,
+                    "category": course.category.name if course.category else None,
+                    "created_at": course.created_at,
+                    "cover_image": (
+                        request.build_absolute_uri(course.cover_image.url)
+                        if course.cover_image
+                        else None
+                    ),
+                }
+                for course in courses
+            ]
+        )
+
+
+class TutorCourseUpdateView(generics.RetrieveUpdateAPIView):
+    """
+    GET   /api/tutor/courses/{id}/  → precarga datos del curso usando serializadores estables
+    PUT   /api/tutor/courses/{id}/  → edición completa
+    PATCH /api/tutor/courses/{id}/  → edición parcial
+    """
+
+    serializer_class = CourseEditSerializer
+    permission_classes = [IsAuthenticated, IsTutor, IsCourseOwner]
+
+    def get_queryset(self):
+        return Course.objects.filter(tutor=self.request.user)
 
 
 class RequestCoursePublicationView(APIView):
-	permission_classes = [IsAuthenticated]
+    """
+    POST /api/tutor/courses/{id}/publish/
+    Cambia el estado del curso a 'PENDING_APPROVAL' tras validar los campos mandatorios.
+    """
 
-	def _get_missing_minimum_fields(self, course):
-		missing_fields = []
+    permission_classes = [IsAuthenticated, IsTutor]
 
-		if not course.title or not course.title.strip():
-			missing_fields.append("title")
+    def _get_missing_minimum_fields(self, course):
+        missing_fields = []
+        if not course.title or not course.title.strip():
+            missing_fields.append("title")
+        if not course.description or not course.description.strip():
+            missing_fields.append("description")
+        if not course.category_id:
+            missing_fields.append("category")
+        return missing_fields
 
-		if not course.description or not course.description.strip():
-			missing_fields.append("description")
+    def post(self, request, pk):
+        with transaction.atomic():
+            course = get_object_or_404(
+                Course.objects.select_for_update(),
+                pk=pk,
+                tutor=request.user,
+            )
+            missing_fields = self._get_missing_minimum_fields(course)
 
-		if not course.category_id:
-			missing_fields.append("category")
+            if missing_fields:
+                return Response(
+                    {
+                        "detail": "El curso no tiene la información mínima completa para solicitar publicación.",
+                        "missing_fields": missing_fields,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-		return missing_fields
+            if course.status == Course.Status.PUBLISHED:
+                return Response(
+                    {"detail": "El curso ya está publicado."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-	def post(self, request, pk):
-		if request.user.role != request.user.Role.TUTOR:
-			return Response(
-				{"detail": "Solo un tutor puede solicitar la publicación de un curso."},
-				status=status.HTTP_403_FORBIDDEN,
-			)
+            if course.status == Course.Status.PENDING_APPROVAL:
+                return Response(
+                    {"detail": "El curso ya tiene una solicitud de publicación pendiente."},
+                    status=status.HTTP_409_CONFLICT,
+                )
 
-		with transaction.atomic():
-			course = get_object_or_404(
-				Course.objects.select_for_update(),
-				pk=pk,
-				tutor=request.user,
-			)
-			missing_fields = self._get_missing_minimum_fields(course)
+            course.status = Course.Status.PENDING_APPROVAL
+            course.rejection_reason = ""
+            course.save(update_fields=["status", "rejection_reason", "updated_at"])
 
-			if missing_fields:
-				return Response(
-					{
-						"detail": "El curso no tiene la información mínima completa para solicitar publicación.",
-						"missing_fields": missing_fields,
-					},
-					status=status.HTTP_400_BAD_REQUEST,
-				)
-
-			if course.status == Course.Status.PUBLISHED:
-				return Response(
-					{"detail": "El curso ya está publicado."},
-					status=status.HTTP_400_BAD_REQUEST,
-				)
-
-			if course.status == Course.Status.PENDING_APPROVAL:
-				return Response(
-					{"detail": "El curso ya tiene una solicitud de publicación pendiente."},
-					status=status.HTTP_409_CONFLICT,
-				)
-
-			course.status = Course.Status.PENDING_APPROVAL
-			course.rejection_reason = ""
-			course.save(update_fields=["status", "rejection_reason", "updated_at"])
-
-		return Response(
-			{
-				"detail": "Solicitud de publicación enviada correctamente.",
-				"course": {
-					"id": course.id,
-					"status": course.status,
-				},
-			},
-			status=status.HTTP_200_OK,
-		)
+        return Response(
+            {
+                "detail": "Solicitud de publicación enviada correctamente.",
+                "course": {
+                    "id": course.id,
+                    "status": course.status,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )

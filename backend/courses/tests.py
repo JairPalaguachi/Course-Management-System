@@ -40,7 +40,7 @@ class PublicCourseListViewTest(TestCase):
 			status=Course.Status.PUBLISHED,
 			is_active=True,
 			level='beginner',
-			duration_minutes=60,
+			duration=1,
 		)
 
 		Course.objects.create(
@@ -60,7 +60,7 @@ class PublicCourseListViewTest(TestCase):
 			status=Course.Status.PUBLISHED,
 			is_active=False,
 			level='advanced',
-			duration_minutes=120,
+			duration=2,
 		)
 
 	def test_public_courses_only_returns_published_courses(self):

@@ -1,4 +1,12 @@
 from django.urls import path
+
+from .views import PublicCourseListView
+
+
+urlpatterns = [
+    path('public/', PublicCourseListView.as_view(), name='public-courses'),
+]
+from django.urls import path
 from .views import TutorCourseCreateView, SectionContentUploadView, CategoryListView, upload_course_cover, TutorCourseDetailView, TutorCoursesListView
 
 urlpatterns = [

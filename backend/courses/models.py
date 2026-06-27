@@ -67,6 +67,16 @@ class Course(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     published_at = models.DateTimeField(null=True, blank=True)
+    level = models.CharField(
+        max_length=20,
+        choices=(
+            ('beginner', 'Beginner'),
+            ('intermediate', 'Intermediate'),
+            ('advanced', 'Advanced'),
+        ),
+        default='beginner',
+    )
+    duration_minutes = models.PositiveIntegerField(null=True, blank=True)
 
     class Meta:
         verbose_name = "Curso"

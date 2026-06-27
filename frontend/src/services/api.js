@@ -1,16 +1,17 @@
 import axios from "axios";
 
 const api = axios.create({
-    baseURL: "http://127.0.0.1:8000/api",
+    baseURL: import.meta.env.VITE_API_URL ?? "/api",
 });
 
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem("access");
+    const requestUrl = config.url ?? "";
 
     // No enviar token al login
     if (
         token &&
-        !config.url.includes("/auth/login/")
+        !requestUrl.includes("/auth/login/")
     ) {
         config.headers.Authorization = `Bearer ${token}`;
     }

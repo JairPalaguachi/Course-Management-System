@@ -204,6 +204,27 @@ function Home() {
                         >
                             Iniciar sesión
                         </Button>
+
+                        <Button
+                            variant="text"
+                            size="large"
+                            startIcon={<AutoStoriesIcon />}
+                            onClick={() => navigate("/courses")}
+                            sx={{
+                                px: 4, py: 1.6,
+                                borderRadius: 3,
+                                fontSize: "1rem",
+                                fontWeight: 600,
+                                color: "rgba(255,255,255,0.92)",
+                                textTransform: "none",
+                                minWidth: 200,
+                                "&:hover": {
+                                    backgroundColor: "rgba(255,255,255,0.08)",
+                                },
+                            }}
+                        >
+                            Ver catálogo
+                        </Button>
                     </Stack>
 
                     {/* category chips */}

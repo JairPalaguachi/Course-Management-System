@@ -190,7 +190,7 @@ function Courses() {
             <>
                 <Grid container spacing={3} sx={{ mb: 4 }}>
                     {courses.map((course) => (
-                        <Grid item xs={12} md={6} lg={4} key={course.id}>
+                        <Grid xs={12} md={6} lg={4} key={course.id}>
                             <CourseCard course={course} onClick={() => handleOpenCourse(course)} />
                         </Grid>
                     ))}

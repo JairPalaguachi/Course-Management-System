@@ -16,7 +16,7 @@ class PublicCourseSerializer(serializers.ModelSerializer):
             'category_name',
             'tutor_username',
             'level',
-            'duration_minutes',
+            'duration',
             'created_at',
             'published_at',
         )

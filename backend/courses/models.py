@@ -24,11 +24,8 @@ class Course(models.Model):
 
     title = models.CharField(max_length=200)
     description = models.TextField()
-
-    cover_image = models.ImageField(
-        upload_to="courses/covers/", null=True, blank=True
-    )
-
+    cover_image = models.ImageField(upload_to="courses/covers/", null=True, blank=True)
+    
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
@@ -41,10 +38,10 @@ class Course(models.Model):
         on_delete=models.CASCADE,
         related_name="created_courses",
     )
-    duration = models.PositiveIntegerField(
-        help_text="Duración del curso en horas"
-    )
-    initial_content = models.TextField()
+    
+    # Valores por defecto para evitar errores de integridad
+    duration = models.PositiveIntegerField(help_text="Duración del curso en horas", default=1)
+    initial_content = models.TextField(default="Sin contenido inicial")
     
     objectives = models.TextField(blank=True)
     preview_video = models.URLField(blank=True)
@@ -67,7 +64,6 @@ class Course(models.Model):
         ),
         default='beginner',
     )
-    duration_minutes = models.PositiveIntegerField(null=True, blank=True)
 
     class Meta:
         verbose_name = "Curso"
@@ -79,9 +75,7 @@ class Course(models.Model):
 
 
 class CourseSection(models.Model):
-    course = models.ForeignKey(
-        Course, on_delete=models.CASCADE, related_name="sections"
-    )
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="sections")
     name = models.CharField(max_length=200)
     order = models.PositiveIntegerField(default=0)
 
@@ -95,14 +89,7 @@ class CourseSection(models.Model):
 
 
 def content_upload_path(instance, filename):
-    """
-    Guarda los archivos organizados por curso y sección:
-    media/courses/<course_id>/sections/<section_id>/<filename>
-    """
-    return (
-        f"courses/{instance.section.course_id}/"
-        f"sections/{instance.section_id}/{filename}"
-    )
+    return f"courses/{instance.section.course_id}/sections/{instance.section_id}/{filename}"
 
 
 class SectionContent(models.Model):
@@ -113,26 +100,11 @@ class SectionContent(models.Model):
         TEXT = "text", "Texto"
         QUIZ = "quiz", "Evaluación"
 
-    # Extensiones permitidas por tipo
-    ALLOWED_EXTENSIONS = {
-        "video": [".mp4", ".webm", ".mov", ".avi"],
-        "pdf": [".pdf"],
-        "image": [".jpg", ".jpeg", ".png", ".webp", ".gif"],
-        "text": [],  # texto plano, sin archivo
-        "quiz": [],  # sin archivo
-    }
-
-    section = models.ForeignKey(
-        CourseSection, on_delete=models.CASCADE, related_name="contents"
-    )
-    type = models.CharField(max_length=20, choices=ContentType.choices)
-    label = models.CharField(max_length=200)
+    section = models.ForeignKey(CourseSection, on_delete=models.CASCADE, related_name="contents")
+    type = models.CharField(max_length=20, choices=ContentType.choices, default=ContentType.TEXT)
+    label = models.CharField(max_length=200, default="Contenido")
     order = models.PositiveIntegerField(default=0)
-
-    file = models.FileField(
-        upload_to=content_upload_path, blank=True, null=True
-    )
-
+    file = models.FileField(upload_to=content_upload_path, blank=True, null=True)
     body = models.TextField(blank=True)
 
     class Meta:
@@ -143,18 +115,10 @@ class SectionContent(models.Model):
     def __str__(self):
         return f"{self.section.name} — {self.label}"
 
-    @property
-    def file_url(self):
-        if self.file:
-            return self.file.url
-        return None
-
 
 class SectionEvaluation(models.Model):
-    section = models.OneToOneField(
-        CourseSection, on_delete=models.CASCADE, related_name="evaluation"
-    )
-    name = models.CharField(max_length=200)
+    section = models.OneToOneField(CourseSection, on_delete=models.CASCADE, related_name="evaluation")
+    name = models.CharField(max_length=200, default="Evaluación")
     max_score = models.PositiveIntegerField(default=100)
     min_score = models.PositiveIntegerField(default=60)
     attempts = models.CharField(max_length=20, default="1")

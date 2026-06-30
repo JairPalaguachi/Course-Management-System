@@ -7,9 +7,9 @@ class Category(models.Model):
     description = models.TextField(blank=True)
 
     class Meta:
-        verbose_name = 'Categoría'
-        verbose_name_plural = 'Categorías'
-        ordering = ['name']
+        verbose_name = "Categoría"
+        verbose_name_plural = "Categorías"
+        ordering = ["name"]
 
     def __str__(self):
         return self.name
@@ -17,29 +17,37 @@ class Category(models.Model):
 
 class Course(models.Model):
     class Status(models.TextChoices):
-        DRAFT = 'draft', 'Borrador'
-        PENDING = 'pending', 'Pendiente de aprobación'
-        PUBLISHED = 'published', 'Publicado'
-        REJECTED = 'rejected', 'Rechazado'
+        DRAFT = "draft", "Borrador"
+        PENDING_APPROVAL = "pending", "Pendiente de aprobación"
+        PUBLISHED = "published", "Publicado"
+        REJECTED = "rejected", "Rechazado"
 
     title = models.CharField(max_length=200)
     description = models.TextField()
+    cover_image = models.ImageField(upload_to="courses/covers/", null=True, blank=True)
+    
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='courses'
+        related_name="courses",
     )
     tutor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='created_courses'
+        related_name="created_courses",
     )
+    
+    # Valores por defecto para evitar errores de integridad
+    duration = models.PositiveIntegerField(help_text="Duración del curso en horas", default=1)
+    initial_content = models.TextField(default="Sin contenido inicial")
+    
+    objectives = models.TextField(blank=True)
+    preview_video = models.URLField(blank=True)
+    language = models.CharField(max_length=30, default="Español")
     status = models.CharField(
-        max_length=20,
-        choices=Status.choices,
-        default=Status.DRAFT
+        max_length=20, choices=Status.choices, default=Status.DRAFT
     )
     rejection_reason = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
@@ -47,11 +55,78 @@ class Course(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     published_at = models.DateTimeField(null=True, blank=True)
+    level = models.CharField(
+        max_length=20,
+        choices=(
+            ('beginner', 'Beginner'),
+            ('intermediate', 'Intermediate'),
+            ('advanced', 'Advanced'),
+        ),
+        default='beginner',
+    )
 
     class Meta:
-        verbose_name = 'Curso'
-        verbose_name_plural = 'Cursos'
-        ordering = ['-created_at']
+        verbose_name = "Curso"
+        verbose_name_plural = "Cursos"
+        ordering = ["-created_at"]
 
     def __str__(self):
         return self.title
+
+
+class CourseSection(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="sections")
+    name = models.CharField(max_length=200)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = "Sección"
+        verbose_name_plural = "Secciones"
+        ordering = ["order"]
+
+    def __str__(self):
+        return f"{self.course.title} — {self.name}"
+
+
+def content_upload_path(instance, filename):
+    return f"courses/{instance.section.course_id}/sections/{instance.section_id}/{filename}"
+
+
+class SectionContent(models.Model):
+    class ContentType(models.TextChoices):
+        VIDEO = "video", "Video"
+        PDF = "pdf", "PDF"
+        IMAGE = "image", "Imagen"
+        TEXT = "text", "Texto"
+        QUIZ = "quiz", "Evaluación"
+
+    section = models.ForeignKey(CourseSection, on_delete=models.CASCADE, related_name="contents")
+    type = models.CharField(max_length=20, choices=ContentType.choices, default=ContentType.TEXT)
+    label = models.CharField(max_length=200, default="Contenido")
+    order = models.PositiveIntegerField(default=0)
+    file = models.FileField(upload_to=content_upload_path, blank=True, null=True)
+    body = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = "Contenido"
+        verbose_name_plural = "Contenidos"
+        ordering = ["order"]
+
+    def __str__(self):
+        return f"{self.section.name} — {self.label}"
+
+
+class SectionEvaluation(models.Model):
+    section = models.OneToOneField(CourseSection, on_delete=models.CASCADE, related_name="evaluation")
+    name = models.CharField(max_length=200, default="Evaluación")
+    max_score = models.PositiveIntegerField(default=100)
+    min_score = models.PositiveIntegerField(default=60)
+    attempts = models.CharField(max_length=20, default="1")
+    instructions = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = "Evaluación de sección"
+        verbose_name_plural = "Evaluaciones de sección"
+
+    def __str__(self):
+        return f"Evaluación: {self.section.name}"

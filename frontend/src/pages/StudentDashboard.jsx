@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
+import PropTypes from "prop-types";
 import {
     Alert,
     Box,
@@ -35,9 +36,9 @@ import CourseDetailDialog from "../components/CourseDetailDialog";
 import api from "../services/api";
 
 // ── Paleta (igual que AdminDashboard / TutorDashboard) ────────────────────────
-const TEAL_DARK  = "#0a2e2b";
-const TEAL_MID   = "#10423f";
-const TEAL       = "#0f766e";
+const TEAL_DARK = "#0a2e2b";
+const TEAL_MID = "#10423f";
+const TEAL = "#0f766e";
 const TEAL_LIGHT = "#f0faf8";
 
 // ── Opciones de filtros (mismo esquema que Courses.jsx) ───────────────────────
@@ -101,6 +102,26 @@ const MOCK_ENROLLMENTS = [
         },
     },
 ];
+
+const CourseShape = PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+    title: PropTypes.string,
+    description: PropTypes.string,
+    tutor_name: PropTypes.string,
+    cover_image: PropTypes.string,
+    level: PropTypes.string,
+});
+
+const EnrollmentShape = PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    progress: PropTypes.number,
+    course: CourseShape,
+});
+
+const getPluralizedCourseText = (count, singular, plural) => {
+    return count === 1 ? singular : plural;
+};
+
 
 // ── Tarjeta de curso inscrito ─────────────────────────────────────────────────
 function EnrolledCourseCard({ enrollment, onGoToCourse }) {
@@ -235,6 +256,12 @@ function EnrolledCourseCard({ enrollment, onGoToCourse }) {
         </Card>
     );
 }
+
+EnrolledCourseCard.propTypes = {
+    enrollment: EnrollmentShape.isRequired,
+    onGoToCourse: PropTypes.func.isRequired,
+};
+
 
 // ── Tarjeta de catálogo (para inscribirse) ────────────────────────────────────
 function CatalogCourseCard({ course, isEnrolled, onEnroll, onViewDetail }) {
@@ -385,6 +412,13 @@ function CatalogCourseCard({ course, isEnrolled, onEnroll, onViewDetail }) {
     );
 }
 
+CatalogCourseCard.propTypes = {
+    course: CourseShape.isRequired,
+    isEnrolled: PropTypes.bool.isRequired,
+    onEnroll: PropTypes.func.isRequired,
+    onViewDetail: PropTypes.func.isRequired,
+};
+
 // ── Componente principal ──────────────────────────────────────────────────────
 function StudentDashboard() {
     const { logout, user } = useAuth();
@@ -394,6 +428,11 @@ function StudentDashboard() {
     const [enrollments, setEnrollments] = useState(MOCK_ENROLLMENTS);
     const loadingEnrollments = false;
     const enrollmentsError = "";
+    // ── IDs de cursos ya inscritos ───────────────────────────────────────────
+    const enrolledIds = useMemo(
+        () => new Set(enrollments.map((enrollment) => enrollment.course?.id ?? enrollment.id)),
+        [enrollments]
+    );
 
     // ── Estado: catálogo ─────────────────────────────────────────────────────
     const [catalogCourses, setCatalogCourses] = useState([]);
@@ -404,6 +443,18 @@ function StudentDashboard() {
     const [totalCount, setTotalCount] = useState(0);
     const [loadingCatalog, setLoadingCatalog] = useState(true);
     const [catalogError, setCatalogError] = useState("");
+
+    const enrolledCoursesLabel = `${enrollments.length} ${getPluralizedCourseText(
+        enrollments.length,
+        "curso inscrito",
+        "cursos inscritos"
+    )}`;
+
+    const availableCoursesLabel = `${totalCount} ${getPluralizedCourseText(
+        totalCount,
+        "curso disponible",
+        "cursos disponibles"
+    )}`;
 
     // ── Estado: inscripción y detalle ────────────────────────────────────────
     const [enrollingCourse, setEnrollingCourse] = useState(null);
@@ -450,10 +501,7 @@ function StudentDashboard() {
         return () => { isActive = false; };
     }, [durationKey, level, page, search]);
 
-    // ── IDs de cursos ya inscritos ───────────────────────────────────────────
-    const enrolledIds = new Set(
-        enrollments.map((e) => (e.course?.id ?? e.id))
-    );
+
 
     // ── Confirmar inscripción (mock — reemplazar con POST /enrollments/) ─────
     const handleConfirmEnroll = async () => {
@@ -753,9 +801,7 @@ function StudentDashboard() {
                                 Mis Cursos
                             </Typography>
                             <Typography sx={{ color: "#64748b" }}>
-                                {loadingEnrollments
-                                    ? "Cargando..."
-                                    : `${enrollments.length} curso${enrollments.length !== 1 ? "s" : ""} inscrito${enrollments.length !== 1 ? "s" : ""}`}
+                                {loadingEnrollments ? "Cargando..." : enrolledCoursesLabel}
                             </Typography>
                         </Box>
 
@@ -921,7 +967,7 @@ function StudentDashboard() {
                                 }}
                             />
                             <Typography sx={{ color: "#64748b", fontSize: "0.9rem" }}>
-                                {loadingCatalog ? "Cargando catálogo..." : `${catalogCourses.length} curso(s) en esta vista`}
+                                {loadingCatalog ? "Buscando..." : availableCoursesLabel}
                             </Typography>
                         </Stack>
                     </Box>

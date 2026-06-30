@@ -1,0 +1,6 @@
+projectKey=CourseManagementSystem
+serverUrl=http://localhost:9000
+serverVersion=26.5.0.122743
+dashboardUrl=http://localhost:9000/dashboard?id=CourseManagementSystem
+ceTaskId=add5a13e-d4c4-4acd-8d66-3c5a9f59d5c5
+ceTaskUrl=http://localhost:9000/api/ce/task?id=add5a13e-d4c4-4acd-8d66-3c5a9f59d5c5

@@ -1,25 +1,21 @@
-from django.db.models import Q
-from rest_framework.generics import ListAPIView
-
-from .models import Course
-from .pagination import CourseCatalogPagination
-from .serializers import PublicCourseSerializer
-
 from django.db import transaction
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.generics import ListAPIView
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Category, Course, CourseSection, SectionContent
+from .pagination import CourseCatalogPagination
 from .permissions import IsCourseOwner, IsTutor
 from .serializers import (
     CategorySerializer,
     CourseEditSerializer,
-    SectionContentUploadSerializer,
+    PublicCourseSerializer,
     TutorCourseCreateSerializer,
 )
 
@@ -222,6 +218,15 @@ class TutorCourseDetailView(APIView):
 
     def put(self, request, pk):
         course = get_object_or_404(Course, pk=pk, tutor=request.user)
+        editable_statuses = [Course.Status.DRAFT, Course.Status.REJECTED]
+
+        if course.status not in editable_statuses:
+            return Response(
+                {
+                    "detail": "Solo puedes editar cursos en estado 'borrador' o 'rechazado'."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         course.title = request.data.get("title", course.title)
         course.description = request.data.get("description", course.description)
@@ -239,14 +244,14 @@ class TutorCourseDetailView(APIView):
         sections_data = request.data.get("sections_meta", [])
 
         for sec_idx, sec_data in enumerate(sections_data):
-            section, created = CourseSection.objects.get_or_create(
+            section, _ = CourseSection.objects.get_or_create(
                 course=course,
                 name=sec_data.get("name", f"Sección {sec_idx+1}"),
                 defaults={"order": sec_idx},
             )
 
             for idx, content_data in enumerate(sec_data.get("contents", [])):
-                content, c_created = SectionContent.objects.get_or_create(
+                SectionContent.objects.get_or_create(
                     section=section,
                     type=content_data.get("type"),
                     label=content_data.get("label"),

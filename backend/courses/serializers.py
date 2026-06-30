@@ -1,6 +1,8 @@
+import os
 from rest_framework import serializers
 
-from .models import Course
+from .models import Category, Course, CourseSection, SectionContent, SectionEvaluation
+
 
 
 class PublicCourseSerializer(serializers.ModelSerializer):
@@ -20,10 +22,7 @@ class PublicCourseSerializer(serializers.ModelSerializer):
             'created_at',
             'published_at',
         )
-import os
-from rest_framework import serializers
 
-from .models import Category, Course, CourseSection, SectionContent, SectionEvaluation
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -288,19 +287,21 @@ class CourseEditSerializer(serializers.ModelSerializer):
             "description",
             "category",
             "duration",
-            "initial_content",
             "level",
             "objectives",
             "preview_video",
             "language",
-            "cover_image",
             "status",
             "created_at",
             "updated_at",
-            "sections",
             "sections_meta",
         ]
-        read_only_fields = ["id", "cover_image", "created_at", "updated_at", "sections"]
+        read_only_fields = [
+            "id",
+            "status",
+            "created_at",
+            "updated_at",
+        ]
 
     def validate(self, attrs):
         course = self.instance
@@ -316,50 +317,145 @@ class CourseEditSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         sections_data = validated_data.pop("sections_meta", None)
 
+        self._update_course_fields(instance, validated_data)
+
+        if sections_data is not None:
+            self._sync_sections(instance, sections_data)
+
+        return instance
+
+    def _update_course_fields(self, instance, validated_data):
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
-        if sections_data is not None:
-            kept_section_ids = []
+    def _sync_sections(self, instance, sections_data):
+        kept_section_ids = []
 
-            for order, section_data in enumerate(sections_data):
-                contents_data = section_data.pop("contents", [])
-                evaluation_data = section_data.pop("evaluation", None)
-                section_id = section_data.pop("id", None)
+        for order, section_data in enumerate(sections_data):
+            section = self._upsert_section(instance, section_data, order)
+            kept_section_ids.append(section.id)
 
-                if section_id:
-                    section = instance.sections.filter(id=section_id).first()
-                    if section:
-                        section.name = section_data["name"]
-                        section.order = order
-                        section.save(update_fields=["name", "order"])
+            contents_data = section_data.get("contents", [])
+            self._sync_contents(section, contents_data)
+
+            evaluation_data = section_data.get("evaluation", None)
+            self._sync_evaluation(section, evaluation_data)
+
+        instance.sections.exclude(id__in=kept_section_ids).delete()
+
+    def _upsert_section(self, instance, section_data, order):
+        section_id = section_data.get("id")
+        section_name = section_data["name"]
+
+        if section_id:
+            section = instance.sections.filter(id=section_id).first()
+            if section:
+                section.name = section_name
+                section.order = order
+                section.save(update_fields=["name", "order"])
+                return section
+
+        return CourseSection.objects.create(
+            course=instance,
+            name=section_name,
+            order=order,
+        )
+
+    def _sync_contents(self, section, contents_data):
+        kept_content_ids = []
+
+        for content_order, content_data in enumerate(contents_data):
+            content = self._upsert_content(section, content_data, content_order)
+            kept_content_ids.append(content.id)
+
+        section.contents.exclude(id__in=kept_content_ids).delete()
+
+    def _upsert_content(self, section, content_data, content_order):
+        content_id = content_data.get("id")
+
+        if content_id:
+            content = section.contents.filter(id=content_id).first()
+            if content:
+                content.type = content_data["type"]
+                content.label = content_data["label"]
+                content.body = content_data.get("body", "")
+                content.order = content_order
+                content.save(update_fields=["type", "label", "body", "order"])
+                return content
+
+        return SectionContent.objects.create(
+            section=section,
+            type=content_data["type"],
+            label=content_data["label"],
+            body=content_data.get("body", ""),
+            order=content_order,
+        )
+
+    def _sync_evaluation(self, section, evaluation_data):
+        if evaluation_data:
+            SectionEvaluation.objects.update_or_create(
+                section=section,
+                defaults=evaluation_data,
+            )
+            return
+
+        if hasattr(section, "evaluation"):
+            section.evaluation.delete()
+            sections_data = validated_data.pop("sections_meta", None)
+
+            for attr, value in validated_data.items():
+                setattr(instance, attr, value)
+            instance.save()
+
+            if sections_data is not None:
+                kept_section_ids = []
+
+                for order, section_data in enumerate(sections_data):
+                    contents_data = section_data.pop("contents", [])
+                    evaluation_data = section_data.pop("evaluation", None)
+                    section_id = section_data.pop("id", None)
+
+                    if section_id:
+                        section = instance.sections.filter(id=section_id).first()
+                        if section:
+                            section.name = section_data["name"]
+                            section.order = order
+                            section.save(update_fields=["name", "order"])
+                        else:
+                            section = CourseSection.objects.create(
+                                course=instance,
+                                name=section_data["name"],
+                                order=order,
+                            )
                     else:
                         section = CourseSection.objects.create(
                             course=instance,
                             name=section_data["name"],
                             order=order,
                         )
-                else:
-                    section = CourseSection.objects.create(
-                        course=instance,
-                        name=section_data["name"],
-                        order=order,
-                    )
 
-                kept_section_ids.append(section.id)
-                kept_content_ids = []
+                    kept_section_ids.append(section.id)
+                    kept_content_ids = []
 
-                for content_order, content_data in enumerate(contents_data):
-                    content_id = content_data.get("id")
-                    if content_id:
-                        content = section.contents.filter(id=content_id).first()
-                        if content:
-                            content.type = content_data["type"]
-                            content.label = content_data["label"]
-                            content.body = content_data.get("body", "")
-                            content.order = content_order
-                            content.save(update_fields=["type", "label", "body", "order"])
+                    for content_order, content_data in enumerate(contents_data):
+                        content_id = content_data.get("id")
+                        if content_id:
+                            content = section.contents.filter(id=content_id).first()
+                            if content:
+                                content.type = content_data["type"]
+                                content.label = content_data["label"]
+                                content.body = content_data.get("body", "")
+                                content.order = content_order
+                                content.save(update_fields=["type", "label", "body", "order"])
+                            else:
+                                content = SectionContent.objects.create(
+                                    section=section,
+                                    type=content_data["type"],
+                                    label=content_data["label"],
+                                    body=content_data.get("body", ""),
+                                    order=content_order,
+                                )
                         else:
                             content = SectionContent.objects.create(
                                 section=section,
@@ -368,29 +464,21 @@ class CourseEditSerializer(serializers.ModelSerializer):
                                 body=content_data.get("body", ""),
                                 order=content_order,
                             )
-                    else:
-                        content = SectionContent.objects.create(
+
+                        kept_content_ids.append(content.id)
+
+                    section.contents.exclude(id__in=kept_content_ids).delete()
+
+                    if evaluation_data:
+                        SectionEvaluation.objects.update_or_create(
                             section=section,
-                            type=content_data["type"],
-                            label=content_data["label"],
-                            body=content_data.get("body", ""),
-                            order=content_order,
+                            defaults=evaluation_data,
                         )
+                    elif hasattr(section, "evaluation"):
+                        section.evaluation.delete()
 
-                    kept_content_ids.append(content.id)
+                instance.sections.exclude(id__in=kept_section_ids).delete()
 
-                section.contents.exclude(id__in=kept_content_ids).delete()
-
-                if evaluation_data:
-                    SectionEvaluation.objects.update_or_create(
-                        section=section,
-                        defaults=evaluation_data,
-                    )
-                elif hasattr(section, "evaluation"):
-                    section.evaluation.delete()
-
-            instance.sections.exclude(id__in=kept_section_ids).delete()
-
-        return instance
+            return instance
 
 

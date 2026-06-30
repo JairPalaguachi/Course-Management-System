@@ -17,16 +17,19 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path, include
-from config.views import health_check
+from django.urls import include, path, re_path
+from config.views import health_check, react_app
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path('api/health/', health_check, name='health-check'),
+    path("api/health/", health_check, name="health-check"),
+
     path("api/", include("courses.urls")),
     path("api/", include("users.urls")),
     path("api/courses/", include("courses.urls")),
     path("api/tutor/", include("courses.tutor_urls")),
+
+    re_path(r"^(?!api/|admin/|static/|media/).*", react_app),
 ]
 
 if settings.DEBUG:

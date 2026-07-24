@@ -11,12 +11,13 @@ from rest_framework.views import APIView
 
 from .models import Category, Course, CourseSection, SectionContent
 from .pagination import CourseCatalogPagination
-from .permissions import IsCourseOwner, IsTutor
+from .permissions import IsCourseOwner, IsTutor, IsAdmin
 from .serializers import (
     CategorySerializer,
     CourseEditSerializer,
     PublicCourseSerializer,
     TutorCourseCreateSerializer,
+    AdminCourseEditSerializer,
 )
 
 
@@ -382,3 +383,17 @@ class RequestCoursePublicationView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+    
+# Crear endpoint PUT/PATCH /api/admin/courses/{id}/ para edición de datos generales por Admin.
+class AdminCourseUpdateView(generics.RetrieveUpdateAPIView):
+    """
+    GET    /api/admin/courses/{id}/
+    PUT    /api/admin/courses/{id}/
+    PATCH  /api/admin/courses/{id}/
+    """
+
+    serializer_class = AdminCourseEditSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    # Solo permitimos interactuar con cursos en estado pendiente de aprobación
+    queryset = Course.objects.filter(status=Course.Status.PENDING_APPROVAL)

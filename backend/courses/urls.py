@@ -7,6 +7,7 @@ from .views import (
     upload_course_cover,
     TutorCourseDetailView,
     TutorCoursesListView,
+    AdminCourseUpdateView,
 )
 
 urlpatterns = [
@@ -50,5 +51,11 @@ urlpatterns = [
         "tutor/courses/list/",
         TutorCoursesListView.as_view(),
         name="tutor-courses-list",
+    ),
+
+    path(
+        "admin/courses/<int:pk>/",
+        AdminCourseUpdateView.as_view(),
+        name="admin-course-update",
     ),
 ]

@@ -482,3 +482,33 @@ class CourseEditSerializer(serializers.ModelSerializer):
             return instance
 
 
+class AdminCourseEditSerializer(CourseEditSerializer):
+    """
+    Serializer para edición de cursos por el administrador.
+
+    Hereda toda la lógica de edición del tutor (actualización de curso,
+    secciones, contenidos y evaluaciones), pero elimina las restricciones
+    propias del tutor.
+    """
+
+    class Meta(CourseEditSerializer.Meta):
+        fields = CourseEditSerializer.Meta.fields + [
+            "rejection_reason",
+            "is_active",
+        ]
+
+        read_only_fields = [
+            "id",
+            "created_at",
+            "updated_at",
+        ]
+
+    def validate(self, attrs):
+        
+        # 2. Validamos el estado del curso (instancia actual)
+        if self.instance and self.instance.status != Course.Status.PENDING_APPROVAL:
+            raise serializers.ValidationError(
+                {"detail": "Solo se pueden editar cursos que estén pendientes de revisión (estado 'pending')."}
+            )
+            
+        return attrs

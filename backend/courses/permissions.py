@@ -11,6 +11,15 @@ class IsTutor(BasePermission):
             and getattr(request.user, "role", None) == "tutor"
         )
 
+class IsAdmin(BasePermission):
+    """Permite acceso solo a usuarios con role == 'admin'."""
+
+    def has_permission(self, request, view):
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and getattr(request.user, "role", None) == "admin"
+        )
 
 class IsCourseOwner(BasePermission):
     """Permite acceso solo si el tutor autenticado es dueño del curso."""

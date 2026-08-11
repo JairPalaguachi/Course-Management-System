@@ -94,3 +94,42 @@ export const updateTutorCourse = async (id, data) => {
 
   return response.data;
 };
+
+// --- Admin: gestión de cursos ---
+
+
+export const getAdminCourses = async () => {
+  const response = await axios.get(`${API_URL}/admin/courses/`, { headers: getAuthHeader() });
+  return response.data;
+};
+
+export const getAdminCourseDetail = async (id) => {
+  const response = await axios.get(`${API_URL}/admin/courses/${id}/`, { headers: getAuthHeader() });
+  return response.data;
+};
+
+export const updateAdminCourse = async (id, data) => {
+  const response = await axios.put(`${API_URL}/admin/courses/${id}/`, data, { headers: getAuthHeader() });
+  return response.data;
+};
+
+export const uploadAdminContentFile = async (contentId, file, onProgress) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await axios.post(`${API_URL}/admin/contents/${contentId}/upload/`, formData, {
+    headers: { ...getAuthHeader(), 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: (event) => {
+      if (onProgress && event.total) onProgress(Math.round((event.loaded * 100) / event.total));
+    },
+  });
+  return response.data;
+};
+
+export const uploadAdminCourseCover = async (courseId, file) => {
+  const formData = new FormData();
+  formData.append('cover', file);
+  const response = await axios.post(`${API_URL}/admin/courses/${courseId}/upload-cover/`, formData, {
+    headers: { ...getAuthHeader(), 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};

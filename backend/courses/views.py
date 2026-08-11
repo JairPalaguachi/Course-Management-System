@@ -11,12 +11,13 @@ from rest_framework.views import APIView
 
 from .models import Category, Course, CourseSection, SectionContent
 from .pagination import CourseCatalogPagination
-from .permissions import IsCourseOwner, IsTutor
+from .permissions import IsCourseOwner, IsTutor, IsAdmin
 from .serializers import (
     CategorySerializer,
     CourseEditSerializer,
     PublicCourseSerializer,
     TutorCourseCreateSerializer,
+    AdminCourseEditSerializer,
 )
 
 
@@ -382,3 +383,24 @@ class RequestCoursePublicationView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+    
+# Crear endpoint PUT/PATCH /api/admin/courses/{id}/ para edición de datos generales por Admin.
+class AdminCourseUpdateView(generics.RetrieveUpdateAPIView):
+    """
+    GET    /api/admin/courses/{id}/
+    PUT    /api/admin/courses/{id}/
+    PATCH  /api/admin/courses/{id}/
+    """
+
+    serializer_class = AdminCourseEditSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    queryset = Course.objects.all()
+
+class AdminCourseListView(generics.ListAPIView):
+    """
+    GET /api/admin/courses/
+    """
+    serializer_class = AdminCourseEditSerializer  
+    permission_classes = [IsAuthenticated, IsAdmin]
+    queryset = Course.objects.all().order_by('-updated_at')

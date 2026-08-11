@@ -8,16 +8,16 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DeleteOutlineIcon from '@mui/icons-material/Delete';
 import ErrorOutlineIcon from '@mui/icons-material/Error';
 
-import { uploadContentFile } from '../services/courseService';
+import { uploadContentFile as uploadTutorContentFile } from '../services/courseService';
 
 
 const ACCEPT = {
   video: '.mp4,.webm,.mov,.avi',
-  pdf:   '.pdf',
+  pdf: '.pdf',
   image: '.jpg,.jpeg,.png,.webp,.gif',
 };
 
-const TEAL       = '#0f766e';
+const TEAL = '#0f766e';
 const TEAL_LIGHT = '#f0faf8';
 
 /**
@@ -28,10 +28,10 @@ const TEAL_LIGHT = '#f0faf8';
  *   contentType {string}   'video' | 'pdf' | 'image'
  *   onUploaded  {Function} Callback({ file_url, contentId }) cuando termina OK
  */
-export default function FileUploader({ contentId, contentType, onUploaded }) {
-  const inputRef              = useRef(null);
+export default function FileUploader({ contentId, contentType, onUploaded, uploadFn }) {
+  const inputRef = useRef(null);
   const [progress, setProgress] = useState(0);
-  const [status,   setStatus]   = useState('idle'); // idle | uploading | done | error
+  const [status, setStatus] = useState('idle'); // idle | uploading | done | error
   const [errorMsg, setErrorMsg] = useState('');
   const [fileName, setFileName] = useState('');
 
@@ -45,7 +45,8 @@ export default function FileUploader({ contentId, contentType, onUploaded }) {
     setErrorMsg('');
 
     try {
-      const result = await uploadContentFile(contentId, file, (pct) => {
+      const doUpload = uploadFn || uploadTutorContentFile;
+      const result = await doUpload(contentId, file, (pct) => {
         setProgress(pct);
       });
       setStatus('done');
@@ -58,7 +59,7 @@ export default function FileUploader({ contentId, contentType, onUploaded }) {
         || 'Error al subir el archivo.';
       setErrorMsg(typeof detail === 'string' ? detail : JSON.stringify(detail));
     } finally {
-      
+
       e.target.value = '';
     }
   };
@@ -81,7 +82,7 @@ export default function FileUploader({ contentId, contentType, onUploaded }) {
         onChange={handleFileChange}
       />
 
-      
+
       {status === 'idle' && (
         <Button
           size="small"
@@ -108,9 +109,11 @@ export default function FileUploader({ contentId, contentType, onUploaded }) {
               Subiendo {fileName}…
             </Typography>
             <LinearProgress variant="determinate" value={progress}
-              sx={{ height: 4, borderRadius: 10,
+              sx={{
+                height: 4, borderRadius: 10,
                 backgroundColor: '#e2e8f0',
-                '& .MuiLinearProgress-bar': { backgroundColor: TEAL } }} />
+                '& .MuiLinearProgress-bar': { backgroundColor: TEAL }
+              }} />
           </Box>
           <Typography sx={{ fontSize: 11, color: '#64748b', flexShrink: 0 }}>
             {progress}%
@@ -118,7 +121,7 @@ export default function FileUploader({ contentId, contentType, onUploaded }) {
         </Box>
       )}
 
-      
+
       {status === 'done' && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <CheckCircleIcon sx={{ fontSize: 16, color: TEAL }} />
@@ -131,7 +134,7 @@ export default function FileUploader({ contentId, contentType, onUploaded }) {
         </Box>
       )}
 
-      
+
       {status === 'error' && (
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
           <ErrorOutlineIcon sx={{ fontSize: 16, color: '#e11d48', mt: 0.1 }} />

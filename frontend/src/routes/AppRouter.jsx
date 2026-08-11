@@ -13,6 +13,8 @@ import TutorCourseCreate from "../pages/TutorCourseCreate";
 import TutorCourses from "../pages/TutorCourses";
 import TutorCourseEdit from '../pages/TutorCourseEdit';
 import StudentRegister from "../pages/StudentRegister";
+import AdminCourseList from "../pages/admin/AdminCourseList";
+import AdminCourseEdit from "../pages/admin/AdminCourseEdit";
 
 function AppRouter() {
     return (
@@ -64,14 +66,30 @@ function AppRouter() {
                     }
                 />
                 <Route
+                    path="/admin/courses"
+                    element={
+                        <ProtectedRoute allowedRole="admin">
+                            <AdminCourseList />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/admin/courses/edit/:id"
+                    element={
+                        <ProtectedRoute allowedRole="admin">
+                            <AdminCourseEdit />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
                     path="/register/student"
                     element={<StudentRegister />}
                 />
 
                 <Route path="/tutor/courses/create" element={<TutorCourseCreate />} />
-                
-                <Route path="/tutor/courses" element={ <ProtectedRoute allowedRole="tutor"> <TutorCourses /> </ProtectedRoute> }
-                
+
+                <Route path="/tutor/courses" element={<ProtectedRoute allowedRole="tutor"> <TutorCourses /> </ProtectedRoute>}
+
                 />
 
                 <Route
@@ -82,7 +100,7 @@ function AppRouter() {
                         </ProtectedRoute>
                     }
                 />
-                
+
             </Routes>
         </BrowserRouter>
     );

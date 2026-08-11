@@ -395,5 +395,12 @@ class AdminCourseUpdateView(generics.RetrieveUpdateAPIView):
     serializer_class = AdminCourseEditSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
 
-    # Solo permitimos interactuar con cursos en estado pendiente de aprobación
-    queryset = Course.objects.filter(status=Course.Status.PENDING_APPROVAL)
+    queryset = Course.objects.all()
+
+class AdminCourseListView(generics.ListAPIView):
+    """
+    GET /api/admin/courses/
+    """
+    serializer_class = AdminCourseEditSerializer  
+    permission_classes = [IsAuthenticated, IsAdmin]
+    queryset = Course.objects.all().order_by('-updated_at')

@@ -39,4 +39,26 @@ function getLevelLabel(level) {
     return LEVEL_LABELS[level] ?? level ?? "No especificado";
 }
 
-export { formatDate, formatDuration, getLevelLabel };
+const STATUS_LABELS = {
+    draft: "Borrador",
+    pending: "Pendiente",
+    published: "Publicado",
+    rejected: "Rechazado",
+};
+
+const STATUS_COLORS = {
+    draft: { bg: "#f1f5f9", color: "#475569" },
+    pending: { bg: "#fef3c7", color: "#92400e" },
+    published: { bg: "#d1fae5", color: "#065f46" },
+    rejected: { bg: "#fee2e2", color: "#991b1b" },
+};
+
+function getStatusLabel(status) {
+    return STATUS_LABELS[status] ?? status ?? "Sin estado";
+}
+
+function getStatusColor(status) {
+    return STATUS_COLORS[status] ?? { bg: "#f1f5f9", color: "#475569" };
+}
+
+export { formatDate, formatDuration, getLevelLabel, getStatusLabel, getStatusColor };

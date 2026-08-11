@@ -94,3 +94,26 @@ export const updateTutorCourse = async (id, data) => {
 
   return response.data;
 };
+
+// --- Admin: gestión de cursos ---
+
+export const getAdminCourses = async () => {
+  const response = await axios.get(`${API_URL}/admin/courses/`, {
+    headers: getAuthHeader(),
+  });
+  return response.data;
+};
+
+export const getAdminCourseDetail = async (id) => {
+  const response = await axios.get(`${API_URL}/admin/courses/${id}/`, {
+    headers: getAuthHeader(),
+  });
+  return response.data;
+};
+
+export const updateAdminCourse = async (id, data) => {
+  const response = await axios.patch(`${API_URL}/admin/courses/${id}/`, data, {
+    headers: getAuthHeader(),
+  });
+  return response.data;
+};

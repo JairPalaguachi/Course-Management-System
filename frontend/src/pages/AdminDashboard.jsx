@@ -20,11 +20,12 @@ import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import GavelIcon from "@mui/icons-material/Gavel";
 import LogoutIcon from "@mui/icons-material/Logout";
+import EditNoteIcon from "@mui/icons-material/EditNote";
 
 // ── Paleta (igual que TutorDashboard / TutorCourses) ──────────────────────────
-const TEAL_DARK  = "#0a2e2b";
-const TEAL_MID   = "#10423f";
-const TEAL       = "#0f766e";
+const TEAL_DARK = "#0a2e2b";
+const TEAL_MID = "#10423f";
+const TEAL = "#0f766e";
 const TEAL_LIGHT = "#f0faf8";
 
 // ── Datos de ejemplo — reemplaza con tu servicio real ─────────────────────────
@@ -139,7 +140,7 @@ function AdminDashboard() {
                     <Box sx={{ position: "absolute", top: 0, right: 16 }}>
                         <Button
                             startIcon={<LogoutIcon />}
-                            onClick= {handleLogout}
+                            onClick={handleLogout}
                             sx={{
                                 color: "rgba(255,255,255,0.7)",
                                 textTransform: "none",
@@ -538,7 +539,43 @@ function AdminDashboard() {
                     </Button>
                 </Container>
             </Box>
-
+            {/* ── Banner CTA: ir a gestión de cursos ────────────────────────── */}
+            <Box
+                sx={{
+                    backgroundColor: TEAL_DARK,
+                    py: { xs: 7, md: 9 },
+                    textAlign: "center",
+                    width: "100%",
+                }}
+            >
+                <Container maxWidth="sm">
+                    <EditNoteIcon sx={{ fontSize: 52, color: "#5eead4", mb: 2 }} />
+                    <Typography variant="h4" sx={{ fontWeight: 800, color: "#ffffff", mb: 1.5 }}>
+                        ¿Necesitas editar un curso?
+                    </Typography>
+                    <Typography sx={{ color: "rgba(255,255,255,0.65)", mb: 4 }}>
+                        Accede al listado completo de cursos de la plataforma y edita su
+                        información general cuando lo necesites.
+                    </Typography>
+                    <Button
+                        variant="contained"
+                        size="large"
+                        startIcon={<EditNoteIcon />}
+                        onClick={() => navigate("/admin/courses")}
+                        sx={{
+                            px: 4, py: 1.5,
+                            borderRadius: 3,
+                            fontWeight: 700,
+                            textTransform: "none",
+                            backgroundColor: TEAL,
+                            color: "#fff",
+                            "&:hover": { backgroundColor: "#0d9488" },
+                        }}
+                    >
+                        Gestionar cursos
+                    </Button>
+                </Container>
+            </Box>
             {/* ── Footer ───────────────────────────────────────────────────── */}
             <Box sx={{ backgroundColor: TEAL_DARK, py: 2.5, textAlign: "center", width: "100%" }}>
                 <Typography sx={{ color: "rgba(255,255,255,0.35)", fontSize: "0.78rem" }}>

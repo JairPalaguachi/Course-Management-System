@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // <-- Nuevo import para navegación
+import { useNavigate } from "react-router-dom";
 import { getUsers } from "../../services/userService";
 import {
   Box,
@@ -20,11 +20,11 @@ import {
   Alert,
   Paper,
   Stack,
-  Button, // <-- Nuevo import
+  Button,
 } from "@mui/material";
 import GroupsIcon from "@mui/icons-material/Groups";
 import FilterListIcon from "@mui/icons-material/FilterList";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack"; // <-- Nuevo import para el ícono
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 const ROLES = [
   { value: "", label: "Todos los roles" },
@@ -76,7 +76,7 @@ function StatusBadge({ active }) {
 }
 
 export default function UserListPage() {
-  const navigate = useNavigate(); // <-- Inicializamos el hook de navegación
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [roleFilter, setRoleFilter] = useState("");
   const [loading, setLoading] = useState(false);

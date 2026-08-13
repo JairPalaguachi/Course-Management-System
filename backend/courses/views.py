@@ -384,23 +384,77 @@ class RequestCoursePublicationView(APIView):
             status=status.HTTP_200_OK,
         )
     
-# Crear endpoint PUT/PATCH /api/admin/courses/{id}/ para edición de datos generales por Admin.
 class AdminCourseUpdateView(generics.RetrieveUpdateAPIView):
     """
     GET    /api/admin/courses/{id}/
     PUT    /api/admin/courses/{id}/
     PATCH  /api/admin/courses/{id}/
+
+    El admin solo puede ver/editar cursos en revisión o ya publicados.
+    Los borradores son responsabilidad exclusiva del tutor.
     """
 
     serializer_class = AdminCourseEditSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
 
-    queryset = Course.objects.all()
+    queryset = Course.objects.filter(
+        status__in=[Course.Status.PENDING_APPROVAL, Course.Status.PUBLISHED]
+    )
+
 
 class AdminCourseListView(generics.ListAPIView):
     """
     GET /api/admin/courses/
+    Lista solo cursos pendientes o publicados.
     """
-    serializer_class = AdminCourseEditSerializer  
+    serializer_class = AdminCourseEditSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
-    queryset = Course.objects.all().order_by('-updated_at')
+    queryset = Course.objects.filter(
+        status__in=[Course.Status.PENDING_APPROVAL, Course.Status.PUBLISHED]
+    ).order_by('-updated_at')
+
+class AdminSectionContentUploadView(APIView):
+    """
+    POST /api/admin/contents/<content_id>/upload/
+    El admin puede subir/reemplazar el archivo de cualquier contenido.
+    """
+    permission_classes = [IsAuthenticated, IsAdmin]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request, content_id):
+        content = get_object_or_404(SectionContent, id=content_id)
+
+        if "file" not in request.FILES:
+            return Response(
+                {"error": "No se ha proporcionado ningún archivo bajo la clave 'file'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        content.file = request.FILES["file"]
+        content.save()
+
+        return Response(
+            {
+                "message": "Archivo subido exitosamente.",
+                "content_id": content.id,
+                "file_url": request.build_absolute_uri(content.file.url) if content.file else None,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated, IsAdmin])
+def admin_upload_course_cover(request, pk):
+    course = get_object_or_404(Course, pk=pk)
+
+    if "cover" not in request.FILES:
+        return Response({"error": "No se envió ninguna imagen"}, status=400)
+
+    course.cover_image = request.FILES["cover"]
+    course.save()
+
+    return Response({
+        "message": "Portada subida exitosamente",
+        "cover_url": request.build_absolute_uri(course.cover_image.url),
+    })

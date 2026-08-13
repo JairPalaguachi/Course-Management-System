@@ -1,10 +1,12 @@
 from django.urls import path
 from .views import (
     AdminCourseListView,
+    AdminSectionContentUploadView,
     PublicCourseListView,
     TutorCourseCreateView,
     SectionContentUploadView,
     CategoryListView,
+    admin_upload_course_cover,
     upload_course_cover,
     TutorCourseDetailView,
     TutorCoursesListView,
@@ -59,6 +61,8 @@ urlpatterns = [
         AdminCourseUpdateView.as_view(),
         name="admin-course-update",
     ),
-    
+
     path('admin/courses/', AdminCourseListView.as_view(), name='admin-course-list'),
+    path('admin/contents/<int:content_id>/upload/', AdminSectionContentUploadView.as_view()),
+    path('admin/courses/<int:pk>/upload-cover/', admin_upload_course_cover),
 ]

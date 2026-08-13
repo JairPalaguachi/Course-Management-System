@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import LoginView, UserListView
+from .views import LoginView, SuperUserSetPasswordView, SuperUserUserDetailView, SuperUserUserListCreateView, UserListView
 
 urlpatterns = [
     path("auth/login/", LoginView.as_view(), name="login"),
@@ -30,4 +30,8 @@ urlpatterns = [
         TutorRegisterView.as_view(),
         name="register-tutor"
     ),
+
+    path("superuser/users/", SuperUserUserListCreateView.as_view(), name="superuser-user-list-create"),
+    path("superuser/users/<int:pk>/", SuperUserUserDetailView.as_view(), name="superuser-user-detail"),
+    path("superuser/users/<int:pk>/set-password/", SuperUserSetPasswordView.as_view(), name="superuser-user-set-password"),
 ]

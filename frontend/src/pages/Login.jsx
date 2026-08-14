@@ -41,7 +41,7 @@ function Login() {
                 username,
                 password,
             });
-            
+
             const { access, refresh, user } = response.data;
 
             login(user, access, refresh);

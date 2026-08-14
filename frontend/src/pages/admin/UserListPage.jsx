@@ -28,13 +28,13 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 const ROLES = [
   { value: "", label: "Todos los roles" },
-  { value: "estudiante", label: "Estudiante" },
+  { value: "student", label: "Estudiante" },
   { value: "tutor", label: "Tutor" },
   { value: "admin", label: "Administrador" },
 ];
 
 const ROLE_CHIP = {
-  estudiante: { bg: "#dbeafe", color: "#1e40af" },
+  student: { bg: "#dbeafe", color: "#1e40af" },
   tutor:      { bg: "#ede9fe", color: "#6d28d9" },
   admin:      { bg: "#d1fae5", color: "#065f46" },
 };

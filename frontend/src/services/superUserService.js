@@ -6,7 +6,7 @@ const getAuthHeader = () => ({
   Authorization: `Bearer ${localStorage.getItem('access')}`,
 });
 
-export const getSuperUserUsers = async (params = {}) => {
+export const getAllUsers = async (params = {}) => {
   const response = await axios.get(`${API_URL}/superuser/users/`, {
     headers: getAuthHeader(),
     params,
@@ -14,30 +14,32 @@ export const getSuperUserUsers = async (params = {}) => {
   return response.data;
 };
 
-export const createSuperUserUser = async (data) => {
+export const createUser = async (data) => {
   const response = await axios.post(`${API_URL}/superuser/users/`, data, {
     headers: getAuthHeader(),
   });
   return response.data;
 };
 
-export const updateSuperUserUser = async (id, data) => {
+export const updateUser = async (id, data) => {
   const response = await axios.patch(`${API_URL}/superuser/users/${id}/`, data, {
     headers: getAuthHeader(),
   });
   return response.data;
 };
 
-export const deleteSuperUserUser = async (id) => {
+export const deleteUser = async (id) => {
   const response = await axios.delete(`${API_URL}/superuser/users/${id}/`, {
     headers: getAuthHeader(),
   });
   return response.data;
 };
 
-export const setSuperUserUserPassword = async (id, data) => {
-  const response = await axios.post(`${API_URL}/superuser/users/${id}/set-password/`, data, {
-    headers: getAuthHeader(),
-  });
+export const setUserPassword = async (id, newPassword, newPasswordConfirm) => {
+  const response = await axios.post(
+    `${API_URL}/superuser/users/${id}/set-password/`,
+    { new_password: newPassword, new_password_confirm: newPasswordConfirm },
+    { headers: getAuthHeader() }
+  );
   return response.data;
 };

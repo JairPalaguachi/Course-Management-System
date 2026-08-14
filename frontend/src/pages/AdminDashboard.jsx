@@ -91,6 +91,7 @@ const QUICK_LINKS = [
 function AdminDashboard() {
     const { logout } = useAuth();
     const navigate = useNavigate();
+    const { user } = useAuth();
 
     const handleLogout = () => {
         logout();
@@ -156,6 +157,22 @@ function AdminDashboard() {
                         >
                             Cerrar sesión
                         </Button>
+
+                        {user?.is_staff && (
+                            <Button
+                                startIcon={<AdminPanelSettingsIcon />}
+                                onClick={() => navigate("/superuser/users")}
+                                sx={{
+                                    color: "rgba(255,255,255,0.7)",
+                                    textTransform: "none",
+                                    fontWeight: 600,
+                                    "&:hover": { color: "#fff", background: "rgba(255,255,255,0.1)" },
+                                }}
+                            >
+                                Panel de superusuario
+                            </Button>
+                        )}
+
                     </Box>
 
                     {/* Ícono de marca */}

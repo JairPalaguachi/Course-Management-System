@@ -12,7 +12,7 @@ function ProtectedRoute({ children, allowedRole, requireStaff }) {
         return <Navigate to="/" />;
     }
 
-    if (allowedRole && user.role !== allowedRole) {
+    if (allowedRole && user.role !== allowedRole && !user.is_staff) {
         return <Navigate to="/" />;
     }
 

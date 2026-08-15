@@ -20,7 +20,7 @@ from .serializers import (
     TutorCourseCreateSerializer,
     AdminCourseEditSerializer,
 )
-
+from users.permissions import IsStaffUser
 
 class PublicCourseListView(ListAPIView):
     permission_classes = [AllowAny]
@@ -619,3 +619,24 @@ def admin_upload_course_cover(request, pk):
         "message": "Portada subida exitosamente",
         "cover_url": request.build_absolute_uri(course.cover_image.url),
     })
+
+class AdminCategoryListCreateView(generics.ListCreateAPIView):
+    """
+    GET  /api/admin/categories/  → listar todas las categorías
+    POST /api/admin/categories/  → crear una categoría nueva
+    """
+    serializer_class = CategorySerializer
+    permission_classes = [IsAuthenticated, IsStaffUser]
+    queryset = Category.objects.all().order_by('name')
+
+
+class AdminCategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    GET    /api/admin/categories/{id}/
+    PUT    /api/admin/categories/{id}/
+    PATCH  /api/admin/categories/{id}/
+    DELETE /api/admin/categories/{id}/
+    """
+    serializer_class = CategorySerializer
+    permission_classes = [IsAuthenticated, IsStaffUser]
+    queryset = Category.objects.all()

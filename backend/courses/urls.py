@@ -14,6 +14,8 @@ from .views import (
     TutorCoursesListView,
     AdminCourseUpdateView,
     StudentCourseDetailView,
+    AdminCategoryListCreateView,
+    AdminCategoryDetailView
 )
 
 urlpatterns = [
@@ -88,4 +90,6 @@ urlpatterns = [
     ),
 
 
+    path('admin/categories/', AdminCategoryListCreateView.as_view(), name='admin-category-list-create'),
+    path('admin/categories/<int:pk>/', AdminCategoryDetailView.as_view(), name='admin-category-detail'),
 ]

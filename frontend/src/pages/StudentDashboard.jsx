@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
-import { getStudentEnrollments } from "../services/courseService";
 import PropTypes from "prop-types";
 import {
     Alert,

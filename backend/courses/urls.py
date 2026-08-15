@@ -11,6 +11,7 @@ from .views import (
     TutorCourseDetailView,
     TutorCoursesListView,
     AdminCourseUpdateView,
+    StudentCourseDetailView,
 )
 
 urlpatterns = [
@@ -20,6 +21,12 @@ urlpatterns = [
         name="public-courses",
     ),
 
+    path(
+        "student/courses/<int:pk>/",
+        StudentCourseDetailView.as_view(),
+        name="student-course-detail",
+    ),
+    
     path(
         "tutor/courses/",
         TutorCourseCreateView.as_view(),

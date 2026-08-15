@@ -4,23 +4,12 @@ const LEVEL_LABELS = {
     advanced: "Avanzado",
 };
 
-function formatDuration(minutes) {
-    if (!minutes) {
+function formatDuration(hours) {
+    if (!hours) {
         return "Duración flexible";
     }
 
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-
-    if (hours === 0) {
-        return `${minutes} min`;
-    }
-
-    if (remainingMinutes === 0) {
-        return `${hours} h`;
-    }
-
-    return `${hours} h ${remainingMinutes} min`;
+    return `${hours} h`;
 }
 
 function formatDate(value) {

@@ -16,6 +16,7 @@ import StudentRegister from "../pages/StudentRegister";
 import AdminCourseList from "../pages/admin/AdminCourseList";
 import AdminCourseEdit from "../pages/admin/AdminCourseEdit";
 import SuperUserUserManagement from "../pages/superuser/SuperUserUserManagement";
+import StudentCourse from "../pages/StudentCourse";
 
 function AppRouter() {
     return (
@@ -32,6 +33,15 @@ function AppRouter() {
                     element={
                         <ProtectedRoute allowedRole="student">
                             <StudentDashboard />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/student/courses/:id"
+                    element={
+                        <ProtectedRoute allowedRole="student">
+                            <StudentCourse />
                         </ProtectedRoute>
                     }
                 />

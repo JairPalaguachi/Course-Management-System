@@ -6,7 +6,6 @@ import {
     Chip,
     Container,
     Divider,
-    Grid,
     Pagination,
     Paper,
     Stack,
@@ -35,10 +34,33 @@ const LEVEL_OPTIONS = [
 ];
 
 const DURATION_OPTIONS = [
-    { key: "all", label: "Cualquier duración", params: {} },
-    { key: "short", label: "Hasta 4 horas", params: { max_duration: 240 } },
-    { key: "medium", label: "4 a 8 horas", params: { min_duration: 240, max_duration: 480 } },
-    { key: "long", label: "Más de 8 horas", params: { min_duration: 480 } },
+    {
+        key: "all",
+        label: "Cualquier duración",
+        params: {},
+    },
+    {
+        key: "short",
+        label: "Menos de 4 horas",
+        params: {
+            max_duration: 4,
+        },
+    },
+    {
+        key: "medium",
+        label: "4 a 8 horas",
+        params: {
+            min_duration: 5,
+            max_duration: 8,
+        },
+    },
+    {
+        key: "long",
+        label: "Más de 8 horas",
+        params: {
+            min_duration: 9,
+        },
+    },
 ];
 
 function Courses() {
@@ -188,13 +210,27 @@ function Courses() {
     } else {
         catalogContent = (
             <>
-                <Grid container spacing={3} sx={{ mb: 4 }}>
+                <Box
+                    sx={{
+                        display: "grid",
+                        gridTemplateColumns: {
+                            xs: "1fr",
+                            sm: "repeat(2, minmax(0, 1fr))",
+                            md: "repeat(3, minmax(0, 1fr))",
+                            lg: "repeat(4, minmax(0, 1fr))",
+                        },
+                        gap: 3,
+                        mb: 4,
+                    }}
+                >
                     {courses.map((course) => (
-                        <Grid xs={12} md={6} lg={4} key={course.id}>
-                            <CourseCard course={course} onClick={() => handleOpenCourse(course)} />
-                        </Grid>
+                        <CourseCard
+                            key={course.id}
+                            course={course}
+                            onClick={() => handleOpenCourse(course)}
+                        />
                     ))}
-                </Grid>
+                </Box>
 
                 {totalPages > 1 ? (
                     <Stack alignItems="center" sx={{ mb: 2 }}>

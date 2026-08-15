@@ -18,6 +18,7 @@ import StudentRegister from "../pages/StudentRegister";
 import AdminCourseList from "../pages/admin/AdminCourseList";
 import AdminCourseEdit from "../pages/admin/AdminCourseEdit";
 import SuperUserUserManagement from "../pages/superuser/SuperUserUserManagement";
+import StudentCourse from "../pages/StudentCourse";
 
 function AppRouter() {
     return (
@@ -39,6 +40,7 @@ function AppRouter() {
                 />
 
                 <Route
+<<<<<<< HEAD
                     path="/student/history"
                     element={
                         <ProtectedRoute allowedRole="student">
@@ -52,6 +54,12 @@ function AppRouter() {
                     element={
                         <ProtectedRoute allowedRole="student">
                             <StudentCourseDetail />
+=======
+                    path="/student/courses/:id"
+                    element={
+                        <ProtectedRoute allowedRole="student">
+                            <StudentCourse />
+>>>>>>> origin/develop
                         </ProtectedRoute>
                     }
                 />

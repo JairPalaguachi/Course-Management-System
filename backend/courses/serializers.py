@@ -8,6 +8,7 @@ from .models import Category, Course, CourseSection, SectionContent, SectionEval
 class PublicCourseSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     tutor_username = serializers.CharField(source='tutor.username', read_only=True)
+    cover_image = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
@@ -19,16 +20,26 @@ class PublicCourseSerializer(serializers.ModelSerializer):
             'tutor_username',
             'level',
             'duration',
+            'cover_image',
             'created_at',
             'published_at',
         )
 
+    def get_cover_image(self, obj):
+        request = self.context.get('request')
+
+        if not obj.cover_image:
+            return None
+
+        if request:
+            return request.build_absolute_uri(obj.cover_image.url)
+
+        return obj.cover_image.url
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ['id', 'name', 'description']
-
 
 # ── Serializers de secciones (solo lectura, para el detalle de curso) ──────────
 

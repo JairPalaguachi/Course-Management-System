@@ -133,3 +133,26 @@ export const uploadAdminCourseCover = async (courseId, file) => {
   });
   return response.data;
 };
+
+export const enrollInCourse = async (courseId) => {
+  const response = await axios.post(
+    `${API_URL}/student/courses/${courseId}/enroll/`,
+    {},
+    {
+      headers: getAuthHeader(),
+    }
+  );
+
+  return response.data;
+};
+
+export const getStudentEnrollments = async () => {
+    const response = await axios.get(
+        `${API_URL}/student/enrollments/`,
+        {
+            headers: getAuthHeader(),
+        }
+    );
+
+    return response.data;
+};

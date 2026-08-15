@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
+import { getStudentEnrollments } from "../services/courseService";
 import PropTypes from "prop-types";
 import {
     Alert,
@@ -34,6 +35,7 @@ import SearchBar from "../components/SearchBar";
 import BasicFilters from "../components/BasicFilters";
 import CourseDetailDialog from "../components/CourseDetailDialog";
 import api from "../services/api";
+import { enrollInCourse } from "../services/courseService";
 
 // ── Paleta (igual que AdminDashboard / TutorDashboard) ────────────────────────
 const TEAL_DARK = "#0a2e2b";
@@ -41,6 +43,20 @@ const TEAL_MID = "#10423f";
 const TEAL = "#0f766e";
 const TEAL_LIGHT = "#f0faf8";
 
+const getMediaUrl = (url) => {
+    if (!url) return "";
+
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+        return url;
+    }
+
+    const apiUrl =
+        import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
+
+    const backendUrl = apiUrl.replace(/\/api\/?$/, "");
+
+    return `${backendUrl}${url.startsWith("/") ? url : `/${url}`}`;
+};
 // ── Opciones de filtros (mismo esquema que Courses.jsx) ───────────────────────
 const PAGE_SIZE = 9;
 
@@ -65,43 +81,6 @@ const LEVEL_LABELS = {
 };
 
 const QUICK_LINKS = ["Mis cursos", "Catálogo", "Progreso", "Certificados", "Perfil"];
-
-// ── Inscripciones de ejemplo (reemplazar con API real cuando esté lista) ──────
-const MOCK_ENROLLMENTS = [
-    {
-        id: 1,
-        progress: 72,
-        course: {
-            id: 1,
-            title: "Introducción a Python para Ciencias de Datos",
-            description: "Aprende los fundamentos de Python con enfoque en análisis de datos y visualización.",
-            tutor_name: "Carlos Menéndez",
-            cover_image: null,
-        },
-    },
-    {
-        id: 2,
-        progress: 100,
-        course: {
-            id: 2,
-            title: "Diseño UX/UI con Figma",
-            description: "Crea interfaces modernas y accesibles usando las mejores herramientas del mercado.",
-            tutor_name: "María Vásquez",
-            cover_image: null,
-        },
-    },
-    {
-        id: 3,
-        progress: 20,
-        course: {
-            id: 3,
-            title: "Redes y Seguridad Informática",
-            description: "Fundamentos de redes TCP/IP, protocolos de seguridad y buenas prácticas.",
-            tutor_name: "Andrés Quiñónez",
-            cover_image: null,
-        },
-    },
-];
 
 const CourseShape = PropTypes.shape({
     id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
@@ -136,6 +115,11 @@ function EnrolledCourseCard({ enrollment, onGoToCourse }) {
                 height: "100%",
                 display: "flex",
                 flexDirection: "column",
+
+                maxWidth: 260,
+                width: "100%",
+                margin: "0 auto",
+
                 border: "1px solid #e2e8f0",
                 transition: "all 0.25s ease",
                 "&:hover": {
@@ -149,7 +133,7 @@ function EnrolledCourseCard({ enrollment, onGoToCourse }) {
                 sx={{
                     height: 140,
                     backgroundImage: course.cover_image
-                        ? `url(${course.cover_image})`
+                        ? `url(${getMediaUrl(course.cover_image)})`
                         : `linear-gradient(145deg, ${TEAL_DARK}, ${TEAL})`,
                     backgroundSize: "cover",
                     backgroundPosition: "center",
@@ -273,6 +257,9 @@ function CatalogCourseCard({ course, isEnrolled, onEnroll, onViewDetail }) {
                 height: "100%",
                 display: "flex",
                 flexDirection: "column",
+                maxWidth: 260,
+                width: "100%",
+                margin: "0 auto",
                 border: "1px solid #e2e8f0",
                 transition: "all 0.25s ease",
                 "&:hover": {
@@ -284,11 +271,13 @@ function CatalogCourseCard({ course, isEnrolled, onEnroll, onViewDetail }) {
             <Box
                 sx={{
                     height: 140,
+                    width: "100%",
                     backgroundImage: course.cover_image
                         ? `url(${course.cover_image})`
                         : `linear-gradient(145deg, ${TEAL_DARK}, ${TEAL})`,
                     backgroundSize: "cover",
                     backgroundPosition: "center",
+                    backgroundRepeat: "no-repeat",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -425,9 +414,9 @@ function StudentDashboard() {
     const navigate = useNavigate();
 
     // ── Estado: cursos inscritos (mock — reemplazar con llamada a API real) ──
-    const [enrollments, setEnrollments] = useState(MOCK_ENROLLMENTS);
-    const loadingEnrollments = false;
-    const enrollmentsError = "";
+    const [enrollments, setEnrollments] = useState([]);
+    const [loadingEnrollments, setLoadingEnrollments] = useState(true);
+    const [enrollmentsError, setEnrollmentsError] = useState("");
     // ── IDs de cursos ya inscritos ───────────────────────────────────────────
     const enrolledIds = useMemo(
         () => new Set(enrollments.map((enrollment) => enrollment.course?.id ?? enrollment.id)),
@@ -468,6 +457,42 @@ function StudentDashboard() {
         navigate("/login");
     };
 
+    // ── Carga de inscripciones del estudiante ────────────────────────────────
+    useEffect(() => {
+        let isActive = true;
+
+        const loadEnrollments = async () => {
+            setLoadingEnrollments(true);
+            setEnrollmentsError("");
+
+            try {
+                const data = await getStudentEnrollments();
+
+                if (!isActive) return;
+
+                setEnrollments(Array.isArray(data) ? data : []);
+            } catch (error) {
+                if (!isActive) return;
+
+                console.error("Error al cargar las inscripciones:", error);
+                setEnrollmentsError(
+                    "No pudimos cargar tus cursos inscritos. Intenta nuevamente."
+                );
+                setEnrollments([]);
+            } finally {
+                if (isActive) {
+                    setLoadingEnrollments(false);
+                }
+            }
+        };
+
+        loadEnrollments();
+
+        return () => {
+            isActive = false;
+        };
+    }, []);
+
     // ── Carga del catálogo ───────────────────────────────────────────────────
     useEffect(() => {
         let isActive = true;
@@ -506,21 +531,37 @@ function StudentDashboard() {
     // ── Confirmar inscripción (mock — reemplazar con POST /enrollments/) ─────
     const handleConfirmEnroll = async () => {
         if (!enrollingCourse) return;
+
         setEnrollLoading(true);
         setEnrollError("");
-        // Simular pequeño delay de red
-        await new Promise((res) => setTimeout(res, 600));
-        setEnrollments((prev) => [
-            ...prev,
-            {
-                id: Date.now(),
-                progress: 0,
-                course: enrollingCourse,
-            },
-        ]);
-        setEnrollSuccess(`Inscrito a "${enrollingCourse.title}" exitosamente.`);
-        setEnrollingCourse(null);
-        setEnrollLoading(false);
+
+        try {
+            const response = await enrollInCourse(enrollingCourse.id);
+
+            console.log("Respuesta de inscripción:", response);
+
+            const updatedEnrollments = await getStudentEnrollments();
+            
+            setEnrollments(
+                Array.isArray(updatedEnrollments) ? updatedEnrollments : []);
+
+            setEnrollSuccess(
+                `Inscrito a "${enrollingCourse.title}" exitosamente.`
+            );
+
+            setEnrollingCourse(null);
+        } catch (error) {
+            console.error("Error al inscribirse:", error);
+
+            const message =
+                error.response?.data?.error ||
+                error.response?.data?.detail ||
+                "No se pudo realizar la inscripción.";
+
+            setEnrollError(message);
+        } finally {
+            setEnrollLoading(false);
+        }
     };
 
     const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));

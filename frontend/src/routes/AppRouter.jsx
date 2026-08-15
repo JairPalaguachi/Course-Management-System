@@ -22,8 +22,10 @@ import AdminDashboard from "../pages/AdminDashboard";
 import UserListPage from "../pages/admin/UserListPage";
 import AdminCourseList from "../pages/admin/AdminCourseList";
 import AdminCourseEdit from "../pages/admin/AdminCourseEdit";
+import AdminCourseReview from "../pages/admin/AdminCourseReview";
 
 import SuperUserUserManagement from "../pages/superuser/SuperUserUserManagement";
+
 
 function AppRouter() {
     return (
@@ -136,6 +138,16 @@ function AppRouter() {
                         </ProtectedRoute>
                     }
                 />
+
+                <Route
+                    path="/admin/courses/:id/review"
+                    element={
+                        <ProtectedRoute allowedRole="admin">
+                            <AdminCourseReview />
+                        </ProtectedRoute>
+                    }
+                />
+
             </Routes>
         </BrowserRouter>
     );

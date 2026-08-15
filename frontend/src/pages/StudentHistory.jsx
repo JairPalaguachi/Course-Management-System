@@ -140,22 +140,44 @@ function StudentHistory() {
                                 display: "flex",
                                 flexDirection: "column",
                                 overflow: "hidden",
+                                maxWidth: 260,
+                                width: "100%",
+                                margin: "0 auto",
+                                transition: "all 0.25s ease",
+                                "&:hover": {
+                                    transform: "translateY(-6px)",
+                                    boxShadow: "0 16px 40px rgba(15,118,110,0.15)",
+                                },
                             }}
                         >
                             <Box
                                 sx={{
-                                    height: 120,
-                                    backgroundImage: course?.cover_image
-                                        ? `url(${course.cover_image})`
-                                        : `linear-gradient(145deg, ${TEAL_DARK}, ${TEAL})`,
-                                    backgroundSize: "cover",
-                                    backgroundPosition: "center",
+                                    height: 150,
+                                    width: "100%",
+                                    overflow: "hidden",
+                                    background: course?.cover_image ? "#f8fafc" : `linear-gradient(145deg, ${TEAL_DARK}, ${TEAL})`,
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
+                                    p: 1.5,
                                 }}
                             >
-                                {!course?.cover_image && (
+                                {course?.cover_image ? (
+                                    <Box
+                                        component="img"
+                                        src={course.cover_image}
+                                        alt={course.title || "Portada del curso"}
+                                        sx={{
+                                            width: "100%",
+                                            height: "100%",
+                                            objectFit: "contain",
+                                            objectPosition: "center",
+                                            display: "block",
+                                            borderRadius: 2,
+                                            backgroundColor: "#f8fafc",
+                                        }}
+                                    />
+                                ) : (
                                     <SchoolIcon sx={{ fontSize: 44, color: "#ffffff", opacity: 0.85 }} />
                                 )}
                             </Box>

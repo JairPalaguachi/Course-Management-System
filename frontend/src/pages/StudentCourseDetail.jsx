@@ -102,16 +102,31 @@ function StudentCourseDetail() {
                 <Box
                     sx={{
                         height: 220,
-                        backgroundImage: course?.cover_image
-                            ? `url(${course.cover_image})`
-                            : `linear-gradient(145deg, ${TEAL_DARK}, ${TEAL})`,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                        display: "grid",
-                        placeItems: "center",
+                        width: "100%",
+                        overflow: "hidden",
+                        background: course?.cover_image ? "#f8fafc" : `linear-gradient(145deg, ${TEAL_DARK}, ${TEAL})`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        p: 1.5,
                     }}
                 >
-                    {!course?.cover_image && (
+                    {course?.cover_image ? (
+                        <Box
+                            component="img"
+                            src={course.cover_image}
+                            alt={course?.title || "Portada del curso"}
+                            sx={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "contain",
+                                objectPosition: "center",
+                                display: "block",
+                                borderRadius: 2,
+                                backgroundColor: "#f8fafc",
+                            }}
+                        />
+                    ) : (
                         <SchoolIcon sx={{ fontSize: 76, color: "#ffffff", opacity: 0.9 }} />
                     )}
                 </Box>

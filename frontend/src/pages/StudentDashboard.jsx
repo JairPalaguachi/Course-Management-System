@@ -35,11 +35,8 @@ import SearchBar from "../components/SearchBar";
 import BasicFilters from "../components/BasicFilters";
 import CourseDetailDialog from "../components/CourseDetailDialog";
 import api from "../services/api";
-<<<<<<< HEAD
 import { getStudentEnrollments } from "../services/enrollmentService";
-=======
 import { enrollInCourse } from "../services/courseService";
->>>>>>> origin/develop
 
 // ── Paleta (igual que AdminDashboard / TutorDashboard) ────────────────────────
 const TEAL_DARK = "#0a2e2b";
@@ -425,11 +422,7 @@ function StudentDashboard() {
     const { logout, user } = useAuth();
     const navigate = useNavigate();
 
-<<<<<<< HEAD
-    // ── Estado: cursos inscritos ──────────────────────────────────────────────
-=======
-    // ── Estado: cursos inscritos (mock — reemplazar con llamada a API real) ──
->>>>>>> origin/develop
+// ── Estado: cursos inscritos ──────────────────────────────────────────────
     const [enrollments, setEnrollments] = useState([]);
     const [loadingEnrollments, setLoadingEnrollments] = useState(true);
     const [enrollmentsError, setEnrollmentsError] = useState("");
@@ -473,61 +466,43 @@ function StudentDashboard() {
         navigate("/login");
     };
 
-<<<<<<< HEAD
-    // ── Carga de inscripciones reales del estudiante ─────────────────────────
-=======
-    // ── Carga de inscripciones del estudiante ────────────────────────────────
->>>>>>> origin/develop
-    useEffect(() => {
-        let isActive = true;
+// ── Carga de inscripciones reales del estudiante ─────────────────────────
+useEffect(() => {
+    let isActive = true;
 
-        const loadEnrollments = async () => {
-            setLoadingEnrollments(true);
-            setEnrollmentsError("");
-<<<<<<< HEAD
-            try {
-                const data = await getStudentEnrollments();
-                if (!isActive) return;
-                setEnrollments(Array.isArray(data) ? data : []);
-            } catch {
-                if (!isActive) return;
-                setEnrollments([]);
-                setEnrollmentsError("No pudimos cargar tus cursos inscritos.");
-            } finally {
-                if (isActive) setLoadingEnrollments(false);
-=======
+    const loadEnrollments = async () => {
+        setLoadingEnrollments(true);
+        setEnrollmentsError("");
 
-            try {
-                const data = await getStudentEnrollments();
+        try {
+            const data = await getStudentEnrollments();
 
-                if (!isActive) return;
+            if (!isActive) return;
 
-                setEnrollments(Array.isArray(data) ? data : []);
-            } catch (error) {
-                if (!isActive) return;
+            setEnrollments(Array.isArray(data) ? data : []);
+        } catch (error) {
+            if (!isActive) return;
 
-                console.error("Error al cargar las inscripciones:", error);
-                setEnrollmentsError(
-                    "No pudimos cargar tus cursos inscritos. Intenta nuevamente."
-                );
-                setEnrollments([]);
-            } finally {
-                if (isActive) {
-                    setLoadingEnrollments(false);
-                }
->>>>>>> origin/develop
+            console.error("Error al cargar las inscripciones:", error);
+
+            setEnrollmentsError(
+                "No pudimos cargar tus cursos inscritos. Intenta nuevamente."
+            );
+
+            setEnrollments([]);
+        } finally {
+            if (isActive) {
+                setLoadingEnrollments(false);
             }
-        };
+        }
+    };
 
-        loadEnrollments();
-<<<<<<< HEAD
-=======
+    loadEnrollments();
 
->>>>>>> origin/develop
-        return () => {
-            isActive = false;
-        };
-    }, []);
+    return () => {
+        isActive = false;
+    };
+}, []);
 
     // ── Carga del catálogo ───────────────────────────────────────────────────
     useEffect(() => {

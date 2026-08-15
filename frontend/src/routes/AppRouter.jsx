@@ -1,24 +1,29 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+
+import ProtectedRoute from "./ProtectedRoute";
+
 import Home from "../pages/Home";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Courses from "../pages/Courses";
+
 import StudentDashboard from "../pages/StudentDashboard";
 import StudentHistory from "../pages/StudentHistory";
 import StudentCourseDetail from "../pages/StudentCourseDetail";
+import StudentRegister from "../pages/StudentRegister";
+
 import TutorDashboard from "../pages/TutorDashboard";
-import AdminDashboard from "../pages/AdminDashboard";
-import ProtectedRoute from "./ProtectedRoute";
 import TutorRegister from "../pages/TutorRegister";
-import UserListPage from "../pages/admin/UserListPage";
 import TutorCourseCreate from "../pages/TutorCourseCreate";
 import TutorCourses from "../pages/TutorCourses";
-import TutorCourseEdit from '../pages/TutorCourseEdit';
-import StudentRegister from "../pages/StudentRegister";
+import TutorCourseEdit from "../pages/TutorCourseEdit";
+
+import AdminDashboard from "../pages/AdminDashboard";
+import UserListPage from "../pages/admin/UserListPage";
 import AdminCourseList from "../pages/admin/AdminCourseList";
 import AdminCourseEdit from "../pages/admin/AdminCourseEdit";
+
 import SuperUserUserManagement from "../pages/superuser/SuperUserUserManagement";
-import StudentCourse from "../pages/StudentCourse";
 
 function AppRouter() {
     return (
@@ -29,7 +34,6 @@ function AppRouter() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/courses" element={<Courses />} />
 
-                {/* dashboards por rol */}
                 <Route
                     path="/student/dashboard"
                     element={
@@ -38,9 +42,7 @@ function AppRouter() {
                         </ProtectedRoute>
                     }
                 />
-
                 <Route
-<<<<<<< HEAD
                     path="/student/history"
                     element={
                         <ProtectedRoute allowedRole="student">
@@ -48,18 +50,11 @@ function AppRouter() {
                         </ProtectedRoute>
                     }
                 />
-
                 <Route
                     path="/student/courses/:courseId"
                     element={
                         <ProtectedRoute allowedRole="student">
                             <StudentCourseDetail />
-=======
-                    path="/student/courses/:id"
-                    element={
-                        <ProtectedRoute allowedRole="student">
-                            <StudentCourse />
->>>>>>> origin/develop
                         </ProtectedRoute>
                     }
                 />
@@ -72,6 +67,33 @@ function AppRouter() {
                         </ProtectedRoute>
                     }
                 />
+                <Route path="/register/tutor" element={<TutorRegister />} />
+                <Route path="/register/student" element={<StudentRegister />} />
+
+                <Route
+                    path="/tutor/courses/create"
+                    element={
+                        <ProtectedRoute allowedRole="tutor">
+                            <TutorCourseCreate />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/tutor/courses"
+                    element={
+                        <ProtectedRoute allowedRole="tutor">
+                            <TutorCourses />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/tutor/courses/edit/:id"
+                    element={
+                        <ProtectedRoute allowedRole="tutor">
+                            <TutorCourseEdit />
+                        </ProtectedRoute>
+                    }
+                />
 
                 <Route
                     path="/admin/dashboard"
@@ -80,11 +102,6 @@ function AppRouter() {
                             <AdminDashboard />
                         </ProtectedRoute>
                     }
-                />
-
-                <Route
-                    path="/register/tutor"
-                    element={<TutorRegister />}
                 />
                 <Route
                     path="/admin/users"
@@ -110,25 +127,6 @@ function AppRouter() {
                         </ProtectedRoute>
                     }
                 />
-                <Route
-                    path="/register/student"
-                    element={<StudentRegister />}
-                />
-
-                <Route path="/tutor/courses/create" element={<TutorCourseCreate />} />
-
-                <Route path="/tutor/courses" element={<ProtectedRoute allowedRole="tutor"> <TutorCourses /> </ProtectedRoute>}
-
-                />
-
-                <Route
-                    path="/tutor/courses/edit/:id"
-                    element={
-                        <ProtectedRoute allowedRole="tutor">
-                            <TutorCourseEdit />
-                        </ProtectedRoute>
-                    }
-                />
 
                 <Route
                     path="/superuser/users"
@@ -138,11 +136,9 @@ function AppRouter() {
                         </ProtectedRoute>
                     }
                 />
-
             </Routes>
         </BrowserRouter>
     );
 }
-
 
 export default AppRouter;

@@ -133,3 +133,29 @@ export const uploadAdminCourseCover = async (courseId, file) => {
   });
   return response.data;
 };
+
+// --- Estudiante: inscripción en cursos (HU-13) ---
+
+/**
+ * Inscribe al estudiante autenticado en un curso publicado.
+ *
+ * POST /api/student/courses/{courseId}/enroll/
+ *
+ * El backend valida el rol del usuario, que el curso esté publicado y que no
+ * exista una inscripción previa. Este helper solo propaga el error de axios
+ * para que la vista muestre el mensaje devuelto en `response.data.detail`.
+ *
+ * @param {number|string} courseId - ID del curso al que se quiere inscribir.
+ * @returns {Promise<{ message: string, enrollment: object }>}
+ */
+export const enrollInCourse = async (courseId) => {
+  const response = await axios.post(
+    `${API_URL}/student/courses/${courseId}/enroll/`,
+    {},
+    {
+      headers: getAuthHeader(),
+    }
+  );
+
+  return response.data;
+};

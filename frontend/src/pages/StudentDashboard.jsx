@@ -34,6 +34,7 @@ import SearchBar from "../components/SearchBar";
 import BasicFilters from "../components/BasicFilters";
 import CourseDetailDialog from "../components/CourseDetailDialog";
 import api from "../services/api";
+import { enrollInCourse } from "../services/courseService";
 
 // ── Paleta (igual que AdminDashboard / TutorDashboard) ────────────────────────
 const TEAL_DARK = "#0a2e2b";
@@ -121,6 +122,45 @@ const EnrollmentShape = PropTypes.shape({
 const getPluralizedCourseText = (count, singular, plural) => {
     return count === 1 ? singular : plural;
 };
+
+// ── Manejo de errores de inscripción (HU-13) ─────────────────────────────────
+const ALREADY_ENROLLED_PATTERN = /ya\s+est[aá]s?\s+inscrit/i;
+
+const DEFAULT_ENROLL_ERROR =
+    "No pudimos completar la inscripción. Intenta nuevamente en unos segundos.";
+
+const ENROLL_ERROR_BY_STATUS = {
+    401: "Tu sesión expiró. Vuelve a iniciar sesión para inscribirte.",
+    403: "Solo los estudiantes pueden inscribirse en cursos.",
+    404: "El curso ya no está disponible.",
+};
+
+/** Prioriza el mensaje del backend y cae en un texto genérico si no existe. */
+const getEnrollErrorMessage = (error) => {
+    const detail = error?.response?.data?.detail;
+
+    if (typeof detail === "string" && detail.trim()) {
+        return detail;
+    }
+
+    return ENROLL_ERROR_BY_STATUS[error?.response?.status] ?? DEFAULT_ENROLL_ERROR;
+};
+
+/** El backend responde 400 cuando el estudiante ya estaba inscrito en el curso. */
+const isAlreadyEnrolledError = (error) => {
+    const detail = error?.response?.data?.detail;
+
+    return error?.response?.status === 400 && ALREADY_ENROLLED_PATTERN.test(detail ?? "");
+};
+
+/** Construye la inscripción local a partir de la respuesta del endpoint. */
+const buildEnrollment = (course, enrollmentData) => ({
+    id: enrollmentData?.id ?? `enrollment-${course.id}`,
+    progress: 0,
+    status: enrollmentData?.status ?? "active",
+    enrolled_at: enrollmentData?.enrolled_at ?? new Date().toISOString(),
+    course,
+});
 
 
 // ── Tarjeta de curso inscrito ─────────────────────────────────────────────────
@@ -503,28 +543,65 @@ function StudentDashboard() {
 
 
 
-    // ── Confirmar inscripción (mock — reemplazar con POST /enrollments/) ─────
+    // ── Agrega el curso a "Mis cursos" evitando duplicados ───────────────────
+    const addEnrollmentToList = (course, enrollmentData) => {
+        setEnrollments((prev) => {
+            const alreadyListed = prev.some(
+                (item) => (item.course?.id ?? item.id) === course.id
+            );
+
+            return alreadyListed ? prev : [...prev, buildEnrollment(course, enrollmentData)];
+        });
+    };
+
+    // ── Abrir / cerrar la confirmación de inscripción ────────────────────────
+    const handleOpenEnrollDialog = (course) => {
+        setEnrollError("");
+        setEnrollSuccess("");
+        setSelectedCourse(null);
+        setEnrollingCourse(course);
+    };
+
+    const handleCloseEnrollDialog = () => {
+        setEnrollingCourse(null);
+        setEnrollError("");
+    };
+
+    // ── Confirmar inscripción: POST /api/student/courses/{id}/enroll/ ────────
     const handleConfirmEnroll = async () => {
         if (!enrollingCourse) return;
+
         setEnrollLoading(true);
         setEnrollError("");
-        // Simular pequeño delay de red
-        await new Promise((res) => setTimeout(res, 600));
-        setEnrollments((prev) => [
-            ...prev,
-            {
-                id: Date.now(),
-                progress: 0,
-                course: enrollingCourse,
-            },
-        ]);
-        setEnrollSuccess(`Inscrito a "${enrollingCourse.title}" exitosamente.`);
-        setEnrollingCourse(null);
-        setEnrollLoading(false);
+
+        try {
+            const data = await enrollInCourse(enrollingCourse.id);
+
+            addEnrollmentToList(enrollingCourse, data?.enrollment);
+            setEnrollSuccess(
+                data?.message || `Te inscribiste en "${enrollingCourse.title}" correctamente.`
+            );
+            setEnrollingCourse(null);
+
+            document
+                .getElementById("enrolled-courses-section")
+                ?.scrollIntoView({ behavior: "smooth" });
+        } catch (error) {
+            // Si el curso ya estaba inscrito, sincronizamos la lista local para
+            // que deje de ofrecerse como disponible en el catálogo.
+            if (isAlreadyEnrolledError(error)) {
+                addEnrollmentToList(enrollingCourse, null);
+            }
+
+            setEnrollError(getEnrollErrorMessage(error));
+        } finally {
+            setEnrollLoading(false);
+        }
     };
 
     const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
     const firstName = user?.first_name || user?.username || "Estudiante";
+    const isStudent = user?.role === "student";
 
     return (
         <Box
@@ -1006,7 +1083,7 @@ function StudentDashboard() {
                                         <CatalogCourseCard
                                             course={course}
                                             isEnrolled={enrolledIds.has(course.id)}
-                                            onEnroll={setEnrollingCourse}
+                                            onEnroll={handleOpenEnrollDialog}
                                             onViewDetail={setSelectedCourse}
                                         />
                                     </Grid>
@@ -1080,7 +1157,7 @@ function StudentDashboard() {
             {/* ── Dialog: confirmar inscripción ─────────────────────────────── */}
             <Dialog
                 open={Boolean(enrollingCourse)}
-                onClose={() => { setEnrollingCourse(null); setEnrollError(""); }}
+                onClose={handleCloseEnrollDialog}
                 PaperProps={{ sx: { borderRadius: 4, p: 1 } }}
                 maxWidth="xs"
                 fullWidth
@@ -1106,7 +1183,7 @@ function StudentDashboard() {
                 </DialogContent>
                 <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
                     <Button
-                        onClick={() => { setEnrollingCourse(null); setEnrollError(""); }}
+                        onClick={handleCloseEnrollDialog}
                         sx={{ textTransform: "none", color: "#64748b" }}
                         disabled={enrollLoading}
                     >
@@ -1136,6 +1213,10 @@ function StudentDashboard() {
                 open={Boolean(selectedCourse)}
                 course={selectedCourse}
                 onClose={() => setSelectedCourse(null)}
+                canEnroll={isStudent}
+                isEnrolled={Boolean(selectedCourse) && enrolledIds.has(selectedCourse.id)}
+                enrolling={enrollLoading}
+                onEnroll={handleOpenEnrollDialog}
             />
         </Box>
     );

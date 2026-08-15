@@ -53,13 +53,16 @@ class PublicCourseListView(ListAPIView):
             queryset = queryset.filter(level__iexact=level)
 		
         # filter by duration range (minutes)
+        # filter by duration range (hours)
         min_dur = self.request.query_params.get('min_duration', None)
         max_dur = self.request.query_params.get('max_duration', None)
+
         if min_dur and min_dur.isdigit():
-            queryset = queryset.filter(duration_minutes__gte=int(min_dur))
+            queryset = queryset.filter(duration__gte=int(min_dur))
+
         if max_dur and max_dur.isdigit():
-            queryset = queryset.filter(duration_minutes__lte=int(max_dur))
-		
+            queryset = queryset.filter(duration__lte=int(max_dur))
+            
         return queryset
 
 

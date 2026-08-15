@@ -1,5 +1,13 @@
 import PropTypes from "prop-types";
-import { Box, Button, Chip, Grid, MenuItem, Stack, TextField, Typography } from "@mui/material";
+import {
+    Box,
+    Button,
+    Chip,
+    MenuItem,
+    Stack,
+    TextField,
+    Typography,
+} from "@mui/material";
 
 function BasicFilters({
     level,
@@ -12,52 +20,147 @@ function BasicFilters({
 }) {
     return (
         <Stack spacing={2}>
-            <Grid container spacing={2}>
-                <Grid item xs={12} sm={6} md={3}>
+            {/* ── Título ─────────────────────────────────────────────── */}
+            <Typography
+                variant="overline"
+                sx={{
+                    color: "#64748b",
+                    fontSize: "1rem",
+                }}
+            >
+                FILTROS BÁSICOS
+            </Typography>
+
+            {/* ── Resumen de filtros seleccionados ───────────────────── */}
+            <Stack
+                direction="row"
+                spacing={1}
+                flexWrap="wrap"
+                useFlexGap
+            >
+                <Chip
+                    label={`Nivel: ${
+                        level
+                            ? levelOptions.find(
+                                  (option) => option.value === level
+                              )?.label || level
+                            : "Todos"
+                    }`}
+                    variant="outlined"
+                />
+
+                <Chip
+                    label={`Duración: ${
+                        durationOptions.find(
+                            (item) => item.key === durationKey
+                        )?.label || "Todas"
+                    }`}
+                    variant="outlined"
+                />
+            </Stack>
+
+            {/* ── Selectores ─────────────────────────────────────────── */}
+            <Box
+                sx={{
+                    display: "flex",
+                    gap: 2,
+                    alignItems: "flex-start",
+                    flexWrap: "wrap",
+                }}
+            >
+                {/* ── Filtro de Nivel ──────────────────────────────── */}
+                <Box
+                    sx={{
+                        width: {
+                            xs: "100%",
+                            sm: 280,
+                        },
+                    }}
+                >
+                    <Typography
+                        sx={{
+                            color: "#64748b",
+                            fontSize: "0.9rem",
+                            mb: 0.5,
+                        }}
+                    >
+                        Nivel
+                    </Typography>
+
                     <TextField
                         select
                         fullWidth
-                        label="Nivel"
                         value={level}
-                        onChange={(event) => onLevelChange(event.target.value)}
+                        onChange={(event) =>
+                            onLevelChange(event.target.value)
+                        }
+                        SelectProps={{
+                            displayEmpty: true,
+                            renderValue: (selected) => {
+                                if (!selected) {
+                                    return "Todos los niveles";
+                                }
+
+                                return (
+                                    levelOptions.find(
+                                        (option) =>
+                                            option.value === selected
+                                    )?.label || selected
+                                );
+                            },
+                        }}
                     >
                         {levelOptions.map((option) => (
-                            <MenuItem key={option.value || "all"} value={option.value}>
+                            <MenuItem
+                                key={option.value || "all"}
+                                value={option.value}
+                            >
                                 {option.label}
                             </MenuItem>
                         ))}
                     </TextField>
-                </Grid>
+                </Box>
 
-                <Grid item xs={12} sm={6} md={3}>
+                {/* ── Filtro de Duración ────────────────────────────── */}
+                <Box
+                    sx={{
+                        width: {
+                            xs: "100%",
+                            sm: 280,
+                        },
+                    }}
+                >
+                    <Typography
+                        sx={{
+                            color: "#64748b",
+                            fontSize: "0.9rem",
+                            mb: 0.5,
+                        }}
+                    >
+                        Duración
+                    </Typography>
+
                     <TextField
                         select
                         fullWidth
-                        label="Duración"
                         value={durationKey}
-                        onChange={(event) => onDurationChange(event.target.value)}
+                        onChange={(event) =>
+                            onDurationChange(event.target.value)
+                        }
                     >
                         {durationOptions.map((option) => (
-                            <MenuItem key={option.key} value={option.key}>
+                            <MenuItem
+                                key={option.key}
+                                value={option.key}
+                            >
                                 {option.label}
                             </MenuItem>
                         ))}
                     </TextField>
-                </Grid>
+                </Box>
+            </Box>
 
-                <Grid item xs={12} md={6} sx={{ display: "flex", alignItems: "center" }}>
-                    <Box sx={{ width: "100%" }}>
-                        <Typography variant="overline" sx={{ color: "#64748b" }}>
-                            Filtros básicos
-                        </Typography>
-                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
-                            <Chip label={`Nivel: ${level || "Todos"}`} variant="outlined" />
-                            <Chip label={`Duración: ${durationOptions.find((item) => item.key === durationKey)?.label || "Todas"}`} variant="outlined" />
-                        </Stack>
-                    </Box>
-                </Grid>
-            </Grid>
-
+            {/* ── Limpiar filtros ────────────────────────────────────── */}
             <Box>
                 <Button
                     variant="text"
@@ -78,19 +181,23 @@ function BasicFilters({
 
 BasicFilters.propTypes = {
     durationKey: PropTypes.string.isRequired,
+
     durationOptions: PropTypes.arrayOf(
         PropTypes.shape({
             key: PropTypes.string.isRequired,
             label: PropTypes.string.isRequired,
-        }),
+        })
     ).isRequired,
+
     level: PropTypes.string.isRequired,
+
     levelOptions: PropTypes.arrayOf(
         PropTypes.shape({
             label: PropTypes.string.isRequired,
             value: PropTypes.string,
-        }),
+        })
     ).isRequired,
+
     onDurationChange: PropTypes.func.isRequired,
     onLevelChange: PropTypes.func.isRequired,
     onReset: PropTypes.func.isRequired,

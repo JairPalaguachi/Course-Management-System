@@ -61,7 +61,7 @@ const getMediaUrl = (url) => {
 const PAGE_SIZE = 9;
 
 const LEVEL_OPTIONS = [
-    { value: "", label: "Todos los niveles" },
+    { value: "all", label: "Todos los niveles" },
     { value: "beginner", label: "Principiante" },
     { value: "intermediate", label: "Intermedio" },
     { value: "advanced", label: "Avanzado" },
@@ -69,9 +69,17 @@ const LEVEL_OPTIONS = [
 
 const DURATION_OPTIONS = [
     { key: "all", label: "Cualquier duración", params: {} },
-    { key: "short", label: "Hasta 4 horas", params: { max_duration: 240 } },
-    { key: "medium", label: "4 a 8 horas", params: { min_duration: 240, max_duration: 480 } },
-    { key: "long", label: "Más de 8 horas", params: { min_duration: 480 } },
+    { key: "short", label: "Hasta 4 horas", params: { max_duration: 4 } },
+    {
+        key: "medium",
+        label: "5 a 8 horas",
+        params: { min_duration: 5, max_duration: 8 },
+    },
+    {
+        key: "long",
+        label: "Más de 8 horas",
+        params: { min_duration: 9 },
+    },
 ];
 
 const LEVEL_LABELS = {
@@ -426,7 +434,7 @@ function StudentDashboard() {
     // ── Estado: catálogo ─────────────────────────────────────────────────────
     const [catalogCourses, setCatalogCourses] = useState([]);
     const [search, setSearch] = useState("");
-    const [level, setLevel] = useState("");
+    const [level, setLevel] = useState("all");
     const [durationKey, setDurationKey] = useState("all");
     const [page, setPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
@@ -503,7 +511,9 @@ function StudentDashboard() {
                 DURATION_OPTIONS.find((o) => o.key === durationKey)?.params ?? {};
             const params = { page, page_size: PAGE_SIZE, ...durationFilters };
             if (search.trim()) params.search = search.trim();
-            if (level) params.level = level;
+            if (level && level !== "all") {
+                params.level = level;
+            }
 
             try {
                 const response = await api.get("/courses/public/", { params });
@@ -1004,7 +1014,10 @@ function StudentDashboard() {
                                 onLevelChange={(v) => { setLevel(v); setPage(1); }}
                                 onDurationChange={(v) => { setDurationKey(v); setPage(1); }}
                                 onReset={() => {
-                                    setSearch(""); setLevel(""); setDurationKey("all"); setPage(1);
+                                    setSearch("");
+                                    setLevel("all");
+                                    setDurationKey("all");
+                                    setPage(1);
                                 }}
                             />
                             <Typography sx={{ color: "#64748b", fontSize: "0.9rem" }}>

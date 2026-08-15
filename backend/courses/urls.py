@@ -2,6 +2,8 @@ from django.urls import path
 from .views import (
     AdminCourseListView,
     AdminSectionContentUploadView,
+    AdminCourseApproveView,
+    AdminCourseRejectView,
     PublicCourseListView,
     TutorCourseCreateView,
     SectionContentUploadView,
@@ -72,4 +74,18 @@ urlpatterns = [
     path('admin/courses/', AdminCourseListView.as_view(), name='admin-course-list'),
     path('admin/contents/<int:content_id>/upload/', AdminSectionContentUploadView.as_view()),
     path('admin/courses/<int:pk>/upload-cover/', admin_upload_course_cover),
+
+    path(
+        "admin/courses/<int:pk>/approve/",
+        AdminCourseApproveView.as_view(),
+        name="admin-course-approve",
+    ),
+
+    path(
+        "admin/courses/<int:pk>/reject/",
+        AdminCourseRejectView.as_view(),
+        name="admin-course-reject",
+    ),
+
+
 ]

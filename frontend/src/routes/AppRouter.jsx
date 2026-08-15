@@ -15,8 +15,10 @@ import TutorCourseEdit from '../pages/TutorCourseEdit';
 import StudentRegister from "../pages/StudentRegister";
 import AdminCourseList from "../pages/admin/AdminCourseList";
 import AdminCourseEdit from "../pages/admin/AdminCourseEdit";
+import AdminCourseReview from "../pages/admin/AdminCourseReview";
 import SuperUserUserManagement from "../pages/superuser/SuperUserUserManagement";
 import StudentCourse from "../pages/StudentCourse";
+
 
 function AppRouter() {
     return (
@@ -117,6 +119,15 @@ function AppRouter() {
                     element={
                         <ProtectedRoute requireStaff>
                             <SuperUserUserManagement />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/admin/courses/:id/review"
+                    element={
+                        <ProtectedRoute allowedRole="admin">
+                            <AdminCourseReview />
                         </ProtectedRoute>
                     }
                 />

@@ -167,3 +167,29 @@ export const getStudentCourseDetail = async (courseId) => {
 
   return response.data;
 };
+
+export const approveAdminCourse = async (courseId) => {
+  const response = await axios.post(
+    `${API_URL}/admin/courses/${courseId}/approve/`,
+    {},
+    {
+      headers: getAuthHeader(),
+    }
+  );
+
+  return response.data;
+};
+
+export const rejectAdminCourse = async (courseId, rejectionReason = "") => {
+  const response = await axios.post(
+    `${API_URL}/admin/courses/${courseId}/reject/`,
+    {
+      rejection_reason: rejectionReason,
+    },
+    {
+      headers: getAuthHeader(),
+    }
+  );
+
+  return response.data;
+};

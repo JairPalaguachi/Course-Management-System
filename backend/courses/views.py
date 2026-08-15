@@ -497,6 +497,82 @@ class AdminCourseListView(generics.ListAPIView):
     queryset = Course.objects.filter(
         status__in=[Course.Status.PENDING_APPROVAL, Course.Status.PUBLISHED]
     ).order_by('-updated_at')
+    
+
+class AdminCourseApproveView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def post(self, request, pk):
+        with transaction.atomic():
+            course = get_object_or_404(
+                Course.objects.select_for_update(),
+                pk=pk,
+            )
+
+            if course.status != Course.Status.PENDING_APPROVAL:
+                return Response(
+                    {
+                        "detail": "Solo se pueden aprobar cursos pendientes de aprobación."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            course.status = Course.Status.PUBLISHED
+            course.save(update_fields=["status", "published_at", "updated_at"])
+
+        return Response(
+            {
+                "detail": "Curso aprobado correctamente.",
+                "course": {
+                    "id": course.id,
+                    "status": course.status,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class AdminCourseRejectView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def post(self, request, pk):
+        with transaction.atomic():
+            course = get_object_or_404(
+                Course.objects.select_for_update(),
+                pk=pk,
+            )
+
+            if course.status != Course.Status.PENDING_APPROVAL:
+                return Response(
+                    {
+                        "detail": "Solo se pueden rechazar cursos pendientes de aprobación."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            course.status = Course.Status.REJECTED
+            course.rejection_reason = request.data.get(
+                "rejection_reason",
+                "Curso rechazado por el administrador.",
+            )
+            course.save(
+                update_fields=[
+                    "status",
+                    "rejection_reason",
+                    "updated_at",
+                ]
+            )
+
+        return Response(
+            {
+                "detail": "Curso rechazado correctamente.",
+                "course": {
+                    "id": course.id,
+                    "status": course.status,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
 
 class AdminSectionContentUploadView(APIView):
     """

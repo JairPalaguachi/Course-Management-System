@@ -170,10 +170,10 @@ function AdminCourseEdit() {
                     pt: { xs: 5, md: 7 }, pb: { xs: 4, md: 6 }, width: '100%',
                 }}>
                     <Container maxWidth="lg">
-                        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/admin/courses')}
+                        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/admin/dashboard')}
                             sx={{ color: 'rgba(255,255,255,0.65)', textTransform: 'none', mb: 2, px: 0,
                                   '&:hover': { color: '#fff', background: 'transparent' } }}>
-                            Cursos
+                            Regresar
                         </Button>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
                             <Typography variant="h5" sx={{ fontWeight: 800, color: '#fff' }}>
@@ -369,7 +369,7 @@ function AdminCourseEdit() {
                                 </Button>
 
                                 <Button fullWidth variant="outlined" size="large"
-                                    onClick={() => navigate('/admin/courses')} disabled={loading}
+                                    onClick={() => navigate('/admin/dashboard')} disabled={loading}
                                     sx={{ py: 1.4, borderRadius: 3, fontWeight: 600, textTransform: 'none', fontSize: 13,
                                           borderColor: TEAL, color: TEAL, '&:hover': { background: TEAL_LIGHT } }}>
                                     Cancelar

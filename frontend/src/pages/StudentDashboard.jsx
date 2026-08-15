@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
-import { getStudentEnrollments } from "../services/courseService";
 import PropTypes from "prop-types";
 import {
     Alert,
@@ -35,6 +34,7 @@ import SearchBar from "../components/SearchBar";
 import BasicFilters from "../components/BasicFilters";
 import CourseDetailDialog from "../components/CourseDetailDialog";
 import api from "../services/api";
+import { getStudentEnrollments } from "../services/enrollmentService";
 import { enrollInCourse } from "../services/courseService";
 
 // ── Paleta (igual que AdminDashboard / TutorDashboard) ────────────────────────
@@ -88,7 +88,7 @@ const LEVEL_LABELS = {
     advanced: "Avanzado",
 };
 
-const QUICK_LINKS = ["Mis cursos", "Catálogo", "Progreso", "Certificados", "Perfil"];
+const QUICK_LINKS = ["Mis cursos", "Catálogo"];
 
 const CourseShape = PropTypes.shape({
     id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
@@ -123,11 +123,9 @@ function EnrolledCourseCard({ enrollment, onGoToCourse }) {
                 height: "100%",
                 display: "flex",
                 flexDirection: "column",
-
                 maxWidth: 260,
                 width: "100%",
                 margin: "0 auto",
-
                 border: "1px solid #e2e8f0",
                 transition: "all 0.25s ease",
                 "&:hover": {
@@ -136,24 +134,26 @@ function EnrolledCourseCard({ enrollment, onGoToCourse }) {
                 },
             }}
         >
-            {/* Imagen / placeholder */}
-            <Box
-                sx={{
-                    height: 140,
-                    backgroundImage: course.cover_image
-                        ? `url(${getMediaUrl(course.cover_image)})`
-                        : `linear-gradient(145deg, ${TEAL_DARK}, ${TEAL})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    position: "relative",
-                }}
-            >
-                {!course.cover_image && <SchoolIcon sx={{ fontSize: 52, color: "#fff", opacity: 0.85 }} />}
+            <Box sx={{ height: 150, width: "100%", overflow: "hidden", position: "relative", background: course.cover_image ? "#f8fafc" : `linear-gradient(145deg, ${TEAL_DARK}, ${TEAL})`, display: "flex", alignItems: "center", justifyContent: "center", p: 1.5 }}>
+                {course.cover_image ? (
+                    <Box
+                        component="img"
+                        src={getMediaUrl(course.cover_image)}
+                        alt={course.title || "Portada del curso"}
+                        sx={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "contain",
+                            objectPosition: "center",
+                            display: "block",
+                            borderRadius: 2,
+                            backgroundColor: "#f8fafc",
+                        }}
+                    />
+                ) : (
+                    <SchoolIcon sx={{ fontSize: 52, color: "#fff", opacity: 0.85 }} />
+                )}
 
-                {/* Barra de progreso sobre la imagen */}
                 <Box
                     sx={{
                         position: "absolute",
@@ -276,22 +276,25 @@ function CatalogCourseCard({ course, isEnrolled, onEnroll, onViewDetail }) {
                 },
             }}
         >
-            <Box
-                sx={{
-                    height: 140,
-                    width: "100%",
-                    backgroundImage: course.cover_image
-                        ? `url(${course.cover_image})`
-                        : `linear-gradient(145deg, ${TEAL_DARK}, ${TEAL})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    backgroundRepeat: "no-repeat",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                }}
-            >
-                {!course.cover_image && <AutoStoriesIcon sx={{ fontSize: 52, color: "#fff", opacity: 0.85 }} />}
+            <Box sx={{ height: 150, width: "100%", overflow: "hidden", background: course.cover_image ? "#f8fafc" : `linear-gradient(145deg, ${TEAL_DARK}, ${TEAL})`, display: "flex", alignItems: "center", justifyContent: "center", p: 1.5 }}>
+                {course.cover_image ? (
+                    <Box
+                        component="img"
+                        src={course.cover_image}
+                        alt={course.title || "Portada del curso"}
+                        sx={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "contain",
+                            objectPosition: "center",
+                            display: "block",
+                            borderRadius: 2,
+                            backgroundColor: "#f8fafc",
+                        }}
+                    />
+                ) : (
+                    <AutoStoriesIcon sx={{ fontSize: 52, color: "#fff", opacity: 0.85 }} />
+                )}
             </Box>
 
             <CardContent sx={{ flexGrow: 1, display: "flex", flexDirection: "column", p: 2.5 }}>
@@ -421,7 +424,7 @@ function StudentDashboard() {
     const { logout, user } = useAuth();
     const navigate = useNavigate();
 
-    // ── Estado: cursos inscritos (mock — reemplazar con llamada a API real) ──
+// ── Estado: cursos inscritos ──────────────────────────────────────────────
     const [enrollments, setEnrollments] = useState([]);
     const [loadingEnrollments, setLoadingEnrollments] = useState(true);
     const [enrollmentsError, setEnrollmentsError] = useState("");
@@ -465,41 +468,43 @@ function StudentDashboard() {
         navigate("/login");
     };
 
-    // ── Carga de inscripciones del estudiante ────────────────────────────────
-    useEffect(() => {
-        let isActive = true;
+// ── Carga de inscripciones reales del estudiante ─────────────────────────
+useEffect(() => {
+    let isActive = true;
 
-        const loadEnrollments = async () => {
-            setLoadingEnrollments(true);
-            setEnrollmentsError("");
+    const loadEnrollments = async () => {
+        setLoadingEnrollments(true);
+        setEnrollmentsError("");
 
-            try {
-                const data = await getStudentEnrollments();
+        try {
+            const data = await getStudentEnrollments();
 
-                if (!isActive) return;
+            if (!isActive) return;
 
-                setEnrollments(Array.isArray(data) ? data : []);
-            } catch (error) {
-                if (!isActive) return;
+            setEnrollments(Array.isArray(data) ? data : []);
+        } catch (error) {
+            if (!isActive) return;
 
-                console.error("Error al cargar las inscripciones:", error);
-                setEnrollmentsError(
-                    "No pudimos cargar tus cursos inscritos. Intenta nuevamente."
-                );
-                setEnrollments([]);
-            } finally {
-                if (isActive) {
-                    setLoadingEnrollments(false);
-                }
+            console.error("Error al cargar las inscripciones:", error);
+
+            setEnrollmentsError(
+                "No pudimos cargar tus cursos inscritos. Intenta nuevamente."
+            );
+
+            setEnrollments([]);
+        } finally {
+            if (isActive) {
+                setLoadingEnrollments(false);
             }
-        };
+        }
+    };
 
-        loadEnrollments();
+    loadEnrollments();
 
-        return () => {
-            isActive = false;
-        };
-    }, []);
+    return () => {
+        isActive = false;
+    };
+}, []);
 
     // ── Carga del catálogo ───────────────────────────────────────────────────
     useEffect(() => {
@@ -698,7 +703,13 @@ function StudentDashboard() {
                     <Stack
                         direction={{ xs: "column", sm: "row" }}
                         spacing={2}
-                        sx={{ justifyContent: "center", alignItems: "center", maxWidth: 500, mx: "auto" }}
+                        sx={{
+                            justifyContent: "center",
+                            alignItems: "stretch",
+                            width: "100%",
+                            maxWidth: 720,
+                            mx: "auto",
+                        }}
                     >
                         <Button
                             variant="contained"
@@ -709,7 +720,10 @@ function StudentDashboard() {
                                     ?.scrollIntoView({ behavior: "smooth" });
                             }}
                             sx={{
-                                px: 4, py: 1.6,
+                                flex: 1,
+                                minWidth: 0,
+                                px: 4,
+                                py: 1.6,
                                 borderRadius: 3,
                                 fontSize: "1rem",
                                 fontWeight: 700,
@@ -721,10 +735,36 @@ function StudentDashboard() {
                                     boxShadow: "0 6px 28px rgba(245,158,11,0.45)",
                                 },
                                 textTransform: "none",
-                                minWidth: 220,
+                                width: "100%",
                             }}
                         >
                             Mis Cursos
+                        </Button>
+
+                        <Button
+                            variant="outlined"
+                            size="large"
+                            startIcon={<MenuBookIcon />}
+                            onClick={() => navigate("/student/history")}
+                            sx={{
+                                flex: 1,
+                                minWidth: 0,
+                                px: 4,
+                                py: 1.6,
+                                borderRadius: 3,
+                                fontSize: "1rem",
+                                fontWeight: 600,
+                                color: "#ffffff",
+                                borderColor: "rgba(255,255,255,0.45)",
+                                "&:hover": {
+                                    borderColor: "#ffffff",
+                                    backgroundColor: "rgba(255,255,255,0.08)",
+                                },
+                                textTransform: "none",
+                                width: "100%",
+                            }}
+                        >
+                            Ver Historial
                         </Button>
 
                         <Button
@@ -736,7 +776,10 @@ function StudentDashboard() {
                                     ?.scrollIntoView({ behavior: "smooth" });
                             }}
                             sx={{
-                                px: 4, py: 1.6,
+                                flex: 1,
+                                minWidth: 0,
+                                px: 4,
+                                py: 1.6,
                                 borderRadius: 3,
                                 fontSize: "1rem",
                                 fontWeight: 600,
@@ -747,7 +790,7 @@ function StudentDashboard() {
                                     backgroundColor: "rgba(255,255,255,0.08)",
                                 },
                                 textTransform: "none",
-                                minWidth: 220,
+                                width: "100%",
                             }}
                         >
                             Explorar Catálogo
@@ -770,6 +813,17 @@ function StudentDashboard() {
                                         backgroundColor: "rgba(255,255,255,0.18)",
                                         cursor: "pointer",
                                     },
+                                }}
+                                onClick={() => {
+                                    if (label === "Mis cursos") {
+                                        document.getElementById("enrolled-courses-section")
+                                            ?.scrollIntoView({ behavior: "smooth" });
+                                        return;
+                                    }
+                                    if (label === "Catálogo") {
+                                        document.getElementById("catalog-section")
+                                            ?.scrollIntoView({ behavior: "smooth" });
+                                    }
                                 }}
                             />
                         ))}
@@ -942,7 +996,12 @@ function StudentDashboard() {
                                         key={id}
                                         enrollment={enrollment}
                                         onGoToCourse={(courseId) =>
-                                            navigate(`/student/courses/${courseId}`)
+                                            navigate(`/student/courses/${courseId}`, {
+                                                state: {
+                                                    enrollment,
+                                                    from: "/student/dashboard",
+                                                },
+                                            })
                                         }
                                     />
                                 );

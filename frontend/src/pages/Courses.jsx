@@ -6,7 +6,6 @@ import {
     Chip,
     Container,
     Divider,
-    Grid,
     Pagination,
     Paper,
     Stack,

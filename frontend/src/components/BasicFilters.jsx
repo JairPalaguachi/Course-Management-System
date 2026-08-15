@@ -88,37 +88,37 @@ function BasicFilters({
                     </Typography>
 
                     <TextField
-                        select
-                        fullWidth
-                        value={level}
-                        onChange={(event) =>
-                            onLevelChange(event.target.value)
-                        }
-                        SelectProps={{
-                            displayEmpty: true,
-                            renderValue: (selected) => {
-                                if (!selected) {
-                                    return "Todos los niveles";
-                                }
+    select
+    fullWidth
+    value={level || "__all__"}
+    onChange={(event) => {
+        const value = event.target.value;
+        onLevelChange(value === "__all__" ? "" : value);
+    }}
+    SelectProps={{
+        displayEmpty: true,
+        renderValue: (selected) => {
+            if (selected === "__all__") {
+                return "Todos los niveles";
+            }
 
-                                return (
-                                    levelOptions.find(
-                                        (option) =>
-                                            option.value === selected
-                                    )?.label || selected
-                                );
-                            },
-                        }}
-                    >
-                        {levelOptions.map((option) => (
-                            <MenuItem
-                                key={option.value || "all"}
-                                value={option.value}
-                            >
-                                {option.label}
-                            </MenuItem>
-                        ))}
-                    </TextField>
+            return (
+                levelOptions.find(
+                    (option) => option.value === selected
+                )?.label || "Todos los niveles"
+            );
+        },
+    }}
+>
+    {levelOptions.map((option) => (
+        <MenuItem
+            key={option.value || "all"}
+            value={option.value || "__all__"}
+        >
+            {option.label}
+        </MenuItem>
+    ))}
+</TextField>
                 </Box>
 
                 {/* ── Filtro de Duración ────────────────────────────── */}

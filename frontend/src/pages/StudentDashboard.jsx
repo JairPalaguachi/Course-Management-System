@@ -856,11 +856,6 @@ useEffect(() => {
                             title: "Progreso Continuo",
                             desc: "Cada sección completada te acerca más a dominar el tema.",
                         },
-                        {
-                            icon: <EmojiEventsIcon sx={{ fontSize: 32, color: TEAL }} />,
-                            title: "Certificaciones",
-                            desc: "Al completar un curso obtienes un certificado de logro.",
-                        },
                     ].map(({ icon, title, desc }) => (
                         <Box
                             key={title}

@@ -12,6 +12,8 @@ from .views import (
     TutorCoursesListView,
     AdminCourseUpdateView,
     StudentCourseDetailView,
+    AdminCategoryListCreateView,
+    AdminCategoryDetailView
 )
 
 urlpatterns = [
@@ -72,4 +74,6 @@ urlpatterns = [
     path('admin/courses/', AdminCourseListView.as_view(), name='admin-course-list'),
     path('admin/contents/<int:content_id>/upload/', AdminSectionContentUploadView.as_view()),
     path('admin/courses/<int:pk>/upload-cover/', admin_upload_course_cover),
+    path('admin/categories/', AdminCategoryListCreateView.as_view(), name='admin-category-list-create'),
+    path('admin/categories/<int:pk>/', AdminCategoryDetailView.as_view(), name='admin-category-detail'),
 ]

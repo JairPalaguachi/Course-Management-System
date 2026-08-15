@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Box, Button, Container, Typography, Stack, Chip, Paper,
@@ -14,9 +14,10 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteOutlineIcon from '@mui/icons-material/Delete';
 import KeyIcon from '@mui/icons-material/Key';
 import SearchIcon from '@mui/icons-material/Search';
+import CategoryIcon from '@mui/icons-material/Category';
 
 import {
-    getAllUsers, createUser, updateUser, deleteUser, setUserPassword,
+    getAllUsers, createUser, updateUser, deleteUser, setUserPassword, getAdminCategories, createCategory, updateCategory, deleteCategory,
 } from '../../services/superUserService';
 
 const TEAL_DARK = '#0a2e2b';
@@ -71,27 +72,79 @@ function SuperUserUserManagement() {
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [deleteError, setDeleteError] = useState('');
 
-    const loadUsers = async () => {
+    const [categories, setCategories] = useState([]);
+    const [catLoading, setCatLoading] = useState(true);
+    const [catError, setCatError] = useState('');
+
+    const [catDialogOpen, setCatDialogOpen] = useState(false);
+    const [editingCategory, setEditingCategory] = useState(null);
+    const [catForm, setCatForm] = useState({ name: '', description: '' });
+    const [catFormError, setCatFormError] = useState('');
+    const [catSaving, setCatSaving] = useState(false);
+    const [catDeleteTarget, setCatDeleteTarget] = useState(null);
+    const [catDeleteError, setCatDeleteError] = useState('');
+
+    const loadUsers = useCallback(async () => {
         setLoading(true);
         setError('');
         try {
             const params = {};
             if (roleFilter) params.role = roleFilter;
             if (search) params.search = search;
-            setUsers(await getAllUsers(params));
+            const nextUsers = await getAllUsers(params);
+            setUsers(nextUsers);
         } catch (err) {
             console.error(err);
             setError('No se pudieron cargar los usuarios.');
         } finally {
             setLoading(false);
         }
-    };
+    }, [roleFilter, search]);
 
     useEffect(() => {
-        const timeout = setTimeout(loadUsers, 300); // debounce de búsqueda
+        const timeout = setTimeout(() => {
+            void loadUsers();
+        }, 300);
         return () => clearTimeout(timeout);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [roleFilter, search]);
+    }, [loadUsers]);
+
+    const refreshCategories = useCallback(() => {
+        let isMounted = true;
+
+        setCatLoading(true);
+        setCatError('');
+
+        getAdminCategories()
+            .then((nextCategories) => {
+                if (isMounted) {
+                    setCategories(nextCategories);
+                }
+            })
+            .catch((err) => {
+                console.error(err);
+                if (isMounted) {
+                    setCatError('No se pudieron cargar las categorías.');
+                }
+            })
+            .finally(() => {
+                if (isMounted) {
+                    setCatLoading(false);
+                }
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            void refreshCategories();
+        }, 0);
+
+        return () => clearTimeout(timeout);
+    }, [refreshCategories]);
+
 
     const openCreate = () => {
         setEditingUser(null);
@@ -187,11 +240,58 @@ function SuperUserUserManagement() {
         }
     };
 
+    const openCreateCategory = () => {
+        setEditingCategory(null);
+        setCatForm({ name: '', description: '' });
+        setCatFormError('');
+        setCatDialogOpen(true);
+    };
+
+    const openEditCategory = (cat) => {
+        setEditingCategory(cat);
+        setCatForm({ name: cat.name, description: cat.description || '' });
+        setCatFormError('');
+        setCatDialogOpen(true);
+    };
+
+    const handleSaveCategory = async () => {
+        setCatFormError('');
+        if (!catForm.name.trim()) {
+            setCatFormError('El nombre es obligatorio.');
+            return;
+        }
+        setCatSaving(true);
+        try {
+            if (editingCategory) {
+                await updateCategory(editingCategory.id, catForm);
+            } else {
+                await createCategory(catForm);
+            }
+            setCatDialogOpen(false);
+            refreshCategories();
+        } catch (err) {
+            const data = err.response?.data;
+            setCatFormError(data ? Object.values(data).flat().join(' ') : 'Error al guardar la categoría.');
+        } finally {
+            setCatSaving(false);
+        }
+    };
+
+    const handleDeleteCategory = async () => {
+        setCatDeleteError('');
+        try {
+            await deleteCategory(catDeleteTarget.id);
+            setCatDeleteTarget(null);
+            refreshCategories();
+        } catch (err) {
+            setCatDeleteError(err.response?.data?.detail || 'No se pudo eliminar la categoría.');
+        }
+    };
+
     return (
         <Box sx={{
-            minHeight: '100vh', backgroundColor: TEAL_LIGHT, width: '100vw',
-            position: 'relative', left: '50%', right: '50%',
-            marginLeft: '-50vw', marginRight: '-50vw', overflowX: 'hidden',
+            minHeight: '100vh', backgroundColor: TEAL_LIGHT, width: '100%',
+            overflowX: 'hidden',
         }}>
             <Box sx={{
                 background: `linear-gradient(145deg, ${TEAL_DARK} 0%, ${TEAL_MID} 55%, ${TEAL} 100%)`,
@@ -199,7 +299,7 @@ function SuperUserUserManagement() {
             }}>
                 <Container maxWidth="lg">
 
-                    <Button startIcon={<ArrowBackIcon  />} onClick={() => navigate('/admin/dashboard')}
+                    <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/admin/dashboard')}
                         sx={{
                             color: 'rgba(255,255,255,0.7)', mb: 3, ml: 1, textTransform: 'none',
                             '&:hover': { color: '#fff', background: 'rgba(255,255,255,0.1)' }
@@ -324,6 +424,127 @@ function SuperUserUserManagement() {
                     </Paper>
                 )}
             </Container>
+
+            <Container maxWidth="lg" sx={{ pb: { xs: 4, md: 6 } }}>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ width: '100%', mb: 2 }}>
+                    <Stack direction="row" alignItems="center" spacing={1.5}>
+                        <CategoryIcon sx={{ color: TEAL }} />
+                        <Typography variant="h5" sx={{ fontWeight: 800, color: TEAL_DARK }}>
+                            Categorías de cursos
+                        </Typography>
+                    </Stack>
+                    <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateCategory}
+                        sx={{
+                            ml: 'auto',
+                            backgroundColor: TEAL, textTransform: 'none', fontWeight: 700, borderRadius: 2,
+                            '&:hover': { backgroundColor: TEAL_MID }
+                        }} >
+                        Nueva categoría
+                    </Button>
+                </Stack>
+
+                {catError && <Alert severity="error" sx={{ borderRadius: 3, mb: 2 }}>{catError}</Alert>}
+
+                {catLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+                        <CircularProgress sx={{ color: TEAL }} />
+                    </Box>
+                ) : (
+                    <Paper elevation={0} sx={{ border: '1px solid #e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
+                        <TableContainer>
+                            <Table>
+                                <TableHead>
+                                    <TableRow sx={{ backgroundColor: '#f8fafc' }}>
+                                        {['ID', 'Nombre', 'Descripción', 'Acciones'].map((h) => (
+                                            <TableCell key={h} sx={{
+                                                fontWeight: 700, color: TEAL_MID, fontSize: 12,
+                                                textTransform: 'uppercase', borderBottom: '2px solid #e2e8f0'
+                                            }}>
+                                                {h}
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {categories.map((cat, idx) => (
+                                        <TableRow key={cat.id} sx={{ backgroundColor: idx % 2 === 0 ? '#fff' : '#f8fafc' }}>
+                                            <TableCell sx={{ color: '#94a3b8' }}>#{cat.id}</TableCell>
+                                            <TableCell sx={{ fontWeight: 600 }}>{cat.name}</TableCell>
+                                            <TableCell sx={{ color: '#475569' }}>{cat.description || '—'}</TableCell>
+                                            <TableCell>
+                                                <Stack direction="row" spacing={0.5}>
+                                                    <Tooltip title="Editar">
+                                                        <IconButton size="small" onClick={() => openEditCategory(cat)} sx={{ color: TEAL }}>
+                                                            <EditIcon sx={{ fontSize: 18 }} />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                    <Tooltip title="Eliminar">
+                                                        <IconButton size="small" onClick={() => { setCatDeleteTarget(cat); setCatDeleteError(''); }} sx={{ color: '#e11d48' }}>
+                                                            <DeleteOutlineIcon sx={{ fontSize: 18 }} />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </Stack>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                    {categories.length === 0 && (
+                                        <TableRow><TableCell colSpan={4} sx={{ textAlign: 'center', py: 5, color: '#94a3b8' }}>
+                                            No hay categorías registradas.
+                                        </TableCell></TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </Paper>
+                )}
+            </Container>
+
+            {/* ── Dialog: crear/editar categoría ── */}
+            <Dialog open={catDialogOpen} onClose={() => setCatDialogOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle sx={{ fontWeight: 700, color: TEAL_DARK }}>
+                    {editingCategory ? 'Editar categoría' : 'Nueva categoría'}
+                </DialogTitle>
+                <DialogContent>
+                    {catFormError && <Alert severity="error" sx={{ mb: 2, mt: 1 }}>{catFormError}</Alert>}
+                    <Stack spacing={2} sx={{ mt: 1 }}>
+                        <TextField fullWidth size="small" label="Nombre"
+                            value={catForm.name} onChange={(e) => setCatForm((p) => ({ ...p, name: e.target.value }))} sx={inputSx} />
+                        <TextField fullWidth size="small" label="Descripción" multiline rows={3}
+                            value={catForm.description} onChange={(e) => setCatForm((p) => ({ ...p, description: e.target.value }))} sx={inputSx} />
+                    </Stack>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2.5 }}>
+                    <Button onClick={() => setCatDialogOpen(false)} sx={{ textTransform: 'none', color: '#64748b' }}>Cancelar</Button>
+                    <Button variant="contained" onClick={handleSaveCategory} disabled={catSaving}
+                        sx={{
+                            backgroundColor: TEAL, textTransform: 'none', fontWeight: 700,
+                            '&:hover': { backgroundColor: TEAL_MID }
+                        }}>
+                        {catSaving ? <CircularProgress size={18} sx={{ color: '#fff' }} /> : 'Guardar'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* ── Dialog: confirmar eliminación de categoría ── */}
+            <Dialog open={!!catDeleteTarget} onClose={() => setCatDeleteTarget(null)} maxWidth="xs" fullWidth>
+                <DialogTitle sx={{ fontWeight: 700, color: '#b91c1c' }}>Eliminar categoría</DialogTitle>
+                <DialogContent>
+                    {catDeleteError && <Alert severity="error" sx={{ mb: 2 }}>{catDeleteError}</Alert>}
+                    <Typography sx={{ fontSize: 14, color: '#475569' }}>
+                        ¿Seguro que quieres eliminar <b>{catDeleteTarget?.name}</b>? Los cursos que la usan quedarán sin categoría asignada.
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2.5 }}>
+                    <Button onClick={() => setCatDeleteTarget(null)} sx={{ textTransform: 'none', color: '#64748b' }}>Cancelar</Button>
+                    <Button variant="contained" onClick={handleDeleteCategory}
+                        sx={{
+                            backgroundColor: '#e11d48', textTransform: 'none', fontWeight: 700,
+                            '&:hover': { backgroundColor: '#be123c' }
+                        }}>
+                        Eliminar
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             {/* ── Dialog: crear/editar ── */}
             <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>

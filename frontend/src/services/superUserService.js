@@ -43,3 +43,22 @@ export const setUserPassword = async (id, newPassword, newPasswordConfirm) => {
   );
   return response.data;
 };
+export const getAdminCategories = async () => {
+  const response = await axios.get(`${API_URL}/admin/categories/`, { headers: getAuthHeader() });
+  return response.data;
+};
+
+export const createCategory = async (data) => {
+  const response = await axios.post(`${API_URL}/admin/categories/`, data, { headers: getAuthHeader() });
+  return response.data;
+};
+
+export const updateCategory = async (id, data) => {
+  const response = await axios.patch(`${API_URL}/admin/categories/${id}/`, data, { headers: getAuthHeader() });
+  return response.data;
+};
+
+export const deleteCategory = async (id) => {
+  const response = await axios.delete(`${API_URL}/admin/categories/${id}/`, { headers: getAuthHeader() });
+  return response.data;
+};

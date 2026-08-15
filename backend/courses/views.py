@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Category, Course, CourseSection, SectionContent
+from enrollments.models import Enrollment
 from .pagination import CourseCatalogPagination
 from .permissions import IsCourseOwner, IsTutor, IsAdmin
 from .serializers import (
@@ -284,6 +285,87 @@ class TutorCourseDetailView(APIView):
             status=status.HTTP_200_OK,
         )
 
+class StudentCourseDetailView(APIView):
+    """
+    GET /api/student/courses/<id>/
+
+    Permite a un estudiante autenticado ver la estructura
+    de un curso publicado, activo y en el que está inscrito.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        # 1. Verificar que el usuario sea estudiante
+        if request.user.role != "student":
+            return Response(
+                {"detail": "Solo los estudiantes pueden acceder a los cursos."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # 2. Buscar únicamente cursos publicados y activos
+        course = get_object_or_404(
+            Course.objects.select_related("category", "tutor"),
+            pk=pk,
+            status=Course.Status.PUBLISHED,
+            is_active=True,
+        )
+
+        # 3. Verificar que el estudiante esté inscrito en este curso
+        enrollment_exists = Enrollment.objects.filter(
+            student=request.user,
+            course=course,
+        ).exists()
+
+        if not enrollment_exists:
+            return Response(
+                {"detail": "No estás inscrito en este curso."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # 4. Devolver la estructura del curso
+        return Response(
+            {
+                "id": course.id,
+                "title": course.title,
+                "description": course.description,
+                "duration": course.duration,
+                "level": course.level,
+                "language": course.language,
+                "objectives": course.objectives,
+                "cover_image": (
+                    request.build_absolute_uri(course.cover_image.url)
+                    if course.cover_image
+                    else None
+                ),
+                "sections": [
+                    {
+                        "id": section.id,
+                        "name": section.name,
+                        "order": section.order,
+                        "contents": [
+                            {
+                                "id": content.id,
+                                "type": content.type,
+                                "label": content.label,
+                                "order": content.order,
+                                "file_url": (
+                                    request.build_absolute_uri(content.file.url)
+                                    if content.file
+                                    else None
+                                ),
+                                "body": content.body,
+                            }
+                            for content in section.contents.all()
+                        ],
+                    }
+                    for section in course.sections.prefetch_related(
+                        "contents"
+                    ).all()
+                ],
+            },
+            status=status.HTTP_200_OK,
+        )
 
 class TutorCoursesListView(APIView):
     permission_classes = [IsAuthenticated, IsTutor]

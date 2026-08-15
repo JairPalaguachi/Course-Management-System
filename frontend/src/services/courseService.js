@@ -156,3 +156,14 @@ export const getStudentEnrollments = async () => {
 
     return response.data;
 };
+
+export const getStudentCourseDetail = async (courseId) => {
+  const response = await axios.get(
+    `${API_URL}/student/courses/${courseId}/`,
+    {
+      headers: getAuthHeader(),
+    }
+  );
+
+  return response.data;
+};

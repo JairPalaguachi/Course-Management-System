@@ -27,16 +27,35 @@ function CourseCard({ course, onClick }) {
             {/* Imagen */}
             <Box
                 sx={{
-                    height: 140,
+                    height: 150,
                     width: "100%",
-                    backgroundImage: course.cover_image
-                        ? `url(${course.cover_image})`
+                    overflow: "hidden",
+                    background: course.cover_image
+                        ? "#f8fafc"
                         : "linear-gradient(145deg, #0a2e2b, #0f766e)",
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    backgroundRepeat: "no-repeat",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    p: 1.5,
                 }}
-            />
+            >
+                {course.cover_image && (
+                    <Box
+                        component="img"
+                        src={course.cover_image}
+                        alt={course.title || "Portada del curso"}
+                        sx={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "contain",
+                            objectPosition: "center",
+                            display: "block",
+                            borderRadius: 2,
+                            backgroundColor: "#f8fafc",
+                        }}
+                    />
+                )}
+            </Box>
 
             {/* Contenido */}
             <CardContent

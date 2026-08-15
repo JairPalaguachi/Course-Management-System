@@ -9,7 +9,7 @@ import Courses from "../pages/Courses";
 
 import StudentDashboard from "../pages/StudentDashboard";
 import StudentHistory from "../pages/StudentHistory";
-import StudentCourseDetail from "../pages/StudentCourseDetail";
+import StudentCourse from "../pages/StudentCourse";
 import StudentRegister from "../pages/StudentRegister";
 
 import TutorDashboard from "../pages/TutorDashboard";
@@ -53,10 +53,10 @@ function AppRouter() {
                     }
                 />
                 <Route
-                    path="/student/courses/:courseId"
+                    path="/student/courses/:id"
                     element={
                         <ProtectedRoute allowedRole="student">
-                            <StudentCourseDetail />
+                            <StudentCourse />
                         </ProtectedRoute>
                     }
                 />

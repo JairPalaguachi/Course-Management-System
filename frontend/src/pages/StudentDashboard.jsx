@@ -34,6 +34,7 @@ import SearchBar from "../components/SearchBar";
 import BasicFilters from "../components/BasicFilters";
 import CourseDetailDialog from "../components/CourseDetailDialog";
 import api from "../services/api";
+import { getStudentEnrollments } from "../services/enrollmentService";
 
 // ── Paleta (igual que AdminDashboard / TutorDashboard) ────────────────────────
 const TEAL_DARK = "#0a2e2b";
@@ -65,43 +66,6 @@ const LEVEL_LABELS = {
 };
 
 const QUICK_LINKS = ["Mis cursos", "Catálogo", "Progreso", "Certificados", "Perfil"];
-
-// ── Inscripciones de ejemplo (reemplazar con API real cuando esté lista) ──────
-const MOCK_ENROLLMENTS = [
-    {
-        id: 1,
-        progress: 72,
-        course: {
-            id: 1,
-            title: "Introducción a Python para Ciencias de Datos",
-            description: "Aprende los fundamentos de Python con enfoque en análisis de datos y visualización.",
-            tutor_name: "Carlos Menéndez",
-            cover_image: null,
-        },
-    },
-    {
-        id: 2,
-        progress: 100,
-        course: {
-            id: 2,
-            title: "Diseño UX/UI con Figma",
-            description: "Crea interfaces modernas y accesibles usando las mejores herramientas del mercado.",
-            tutor_name: "María Vásquez",
-            cover_image: null,
-        },
-    },
-    {
-        id: 3,
-        progress: 20,
-        course: {
-            id: 3,
-            title: "Redes y Seguridad Informática",
-            description: "Fundamentos de redes TCP/IP, protocolos de seguridad y buenas prácticas.",
-            tutor_name: "Andrés Quiñónez",
-            cover_image: null,
-        },
-    },
-];
 
 const CourseShape = PropTypes.shape({
     id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
@@ -424,10 +388,10 @@ function StudentDashboard() {
     const { logout, user } = useAuth();
     const navigate = useNavigate();
 
-    // ── Estado: cursos inscritos (mock — reemplazar con llamada a API real) ──
-    const [enrollments, setEnrollments] = useState(MOCK_ENROLLMENTS);
-    const loadingEnrollments = false;
-    const enrollmentsError = "";
+    // ── Estado: cursos inscritos ──────────────────────────────────────────────
+    const [enrollments, setEnrollments] = useState([]);
+    const [loadingEnrollments, setLoadingEnrollments] = useState(true);
+    const [enrollmentsError, setEnrollmentsError] = useState("");
     // ── IDs de cursos ya inscritos ───────────────────────────────────────────
     const enrolledIds = useMemo(
         () => new Set(enrollments.map((enrollment) => enrollment.course?.id ?? enrollment.id)),
@@ -467,6 +431,32 @@ function StudentDashboard() {
         logout();
         navigate("/login");
     };
+
+    // ── Carga de inscripciones reales del estudiante ─────────────────────────
+    useEffect(() => {
+        let isActive = true;
+
+        const loadEnrollments = async () => {
+            setLoadingEnrollments(true);
+            setEnrollmentsError("");
+            try {
+                const data = await getStudentEnrollments();
+                if (!isActive) return;
+                setEnrollments(Array.isArray(data) ? data : []);
+            } catch {
+                if (!isActive) return;
+                setEnrollments([]);
+                setEnrollmentsError("No pudimos cargar tus cursos inscritos.");
+            } finally {
+                if (isActive) setLoadingEnrollments(false);
+            }
+        };
+
+        loadEnrollments();
+        return () => {
+            isActive = false;
+        };
+    }, []);
 
     // ── Carga del catálogo ───────────────────────────────────────────────────
     useEffect(() => {

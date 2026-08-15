@@ -4,6 +4,8 @@ import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Courses from "../pages/Courses";
 import StudentDashboard from "../pages/StudentDashboard";
+import StudentHistory from "../pages/StudentHistory";
+import StudentCourseDetail from "../pages/StudentCourseDetail";
 import TutorDashboard from "../pages/TutorDashboard";
 import AdminDashboard from "../pages/AdminDashboard";
 import ProtectedRoute from "./ProtectedRoute";
@@ -32,6 +34,24 @@ function AppRouter() {
                     element={
                         <ProtectedRoute allowedRole="student">
                             <StudentDashboard />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/student/history"
+                    element={
+                        <ProtectedRoute allowedRole="student">
+                            <StudentHistory />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/student/courses/:courseId"
+                    element={
+                        <ProtectedRoute allowedRole="student">
+                            <StudentCourseDetail />
                         </ProtectedRoute>
                     }
                 />

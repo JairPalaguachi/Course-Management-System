@@ -39,6 +39,7 @@ function StudentCourseDetail() {
     const [enrollment, setEnrollment] = useState(location.state?.enrollment || null);
     const [loading, setLoading] = useState(!location.state?.enrollment);
     const [error, setError] = useState("");
+    const fallbackPath = location.state?.from || "/student/dashboard";
 
     useEffect(() => {
         if (enrollment) return;
@@ -158,7 +159,7 @@ function StudentCourseDetail() {
             <Container maxWidth="md" sx={{ py: { xs: 4, md: 6 } }}>
                 <Button
                     startIcon={<ArrowBackIcon />}
-                    onClick={() => navigate("/student/history")}
+                    onClick={() => navigate(fallbackPath)}
                     sx={{
                         mb: 3,
                         color: TEAL,
@@ -167,7 +168,7 @@ function StudentCourseDetail() {
                         "&:hover": { backgroundColor: "rgba(15,118,110,0.08)" },
                     }}
                 >
-                    Volver al historial
+                    Volver
                 </Button>
 
                 {content}

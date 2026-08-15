@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import {
     Alert,
     Box,
@@ -37,6 +37,7 @@ const formatEnrollmentDate = (isoDate) => {
 
 function StudentHistory() {
     const { user, logout } = useAuth();
+    const location = useLocation();
     const navigate = useNavigate();
     const [enrollments, setEnrollments] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -200,7 +201,7 @@ function StudentHistory() {
                                 <Button
                                     component={RouterLink}
                                     to={`/student/courses/${course?.id}`}
-                                    state={{ enrollment }}
+                                    state={{ enrollment, from: location.pathname }}
                                     variant="outlined"
                                     startIcon={<VisibilityIcon />}
                                     sx={{

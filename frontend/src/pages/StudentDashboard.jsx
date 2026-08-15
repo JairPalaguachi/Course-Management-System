@@ -669,6 +669,29 @@ function StudentDashboard() {
                         <Button
                             variant="outlined"
                             size="large"
+                            startIcon={<MenuBookIcon />}
+                            onClick={() => navigate("/student/history")}
+                            sx={{
+                                px: 4, py: 1.6,
+                                borderRadius: 3,
+                                fontSize: "1rem",
+                                fontWeight: 600,
+                                color: "#ffffff",
+                                borderColor: "rgba(255,255,255,0.45)",
+                                "&:hover": {
+                                    borderColor: "#ffffff",
+                                    backgroundColor: "rgba(255,255,255,0.08)",
+                                },
+                                textTransform: "none",
+                                minWidth: 220,
+                            }}
+                        >
+                            Ver Historial
+                        </Button>
+
+                        <Button
+                            variant="outlined"
+                            size="large"
                             startIcon={<ExploreIcon />}
                             onClick={() => {
                                 document.getElementById("catalog-section")
@@ -709,6 +732,16 @@ function StudentDashboard() {
                                         backgroundColor: "rgba(255,255,255,0.18)",
                                         cursor: "pointer",
                                     },
+                                }}
+                                onClick={() => {
+                                    if (label === "Mis cursos") {
+                                        navigate("/student/history");
+                                        return;
+                                    }
+                                    if (label === "Catálogo") {
+                                        document.getElementById("catalog-section")
+                                            ?.scrollIntoView({ behavior: "smooth" });
+                                    }
                                 }}
                             />
                         ))}
@@ -881,7 +914,12 @@ function StudentDashboard() {
                                         key={id}
                                         enrollment={enrollment}
                                         onGoToCourse={(courseId) =>
-                                            navigate(`/student/courses/${courseId}`)
+                                            navigate(`/student/courses/${courseId}`, {
+                                                state: {
+                                                    enrollment,
+                                                    from: "/student/dashboard",
+                                                },
+                                            })
                                         }
                                     />
                                 );

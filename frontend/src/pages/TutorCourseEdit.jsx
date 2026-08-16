@@ -7,10 +7,11 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SaveIcon from '@mui/icons-material/Save';
 import SendIcon from '@mui/icons-material/Send';
 import UploadIcon from '@mui/icons-material/Upload';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+
 
 import {
     getCourseDetail,
@@ -46,8 +47,6 @@ function TutorCourseEdit() {
                 { id: 1, type: 'video', label: 'Bienvenida al curso' },
                 { id: 2, type: 'pdf', label: 'Guía de instalación.pdf' },
             ],
-            hasEval: false,
-            eval: { name: '', maxScore: 100, minScore: 60, attempts: '1', instructions: '' },
         },
     ]);
     const [hasCover, setHasCover] = useState(false);
@@ -162,18 +161,13 @@ function TutorCourseEdit() {
                 setSections(normalizeSections(result.sections));
             }
 
-            setSuccess(mode === "draft" ? "Curso actualizado exitosamente." : "Curso actualizado correctamente");
+            setSuccess(
+                mode === 'draft'
+                    ? 'Curso guardado como borrador.'
+                    : 'Curso enviado a revisión correctamente.'
+            );
 
-            // 🔄 REDIRECCIÓN CONDICIONAL:
-            if (mode === 'review') {
-                // Si va a revisión, sí lo sacamos de la pantalla porque ya terminó por completo
-                setTimeout(() => {
-                    navigate("/tutor/courses");
-                }, 1500);
-            } else {
-                // Si es un guardado normal ('draft'), apagamos el estado de carga para que pueda seguir editando
-                setLoading(false);
-            }
+            navigate('/tutor/courses');
 
         } catch (e) {
             console.error(e);
@@ -380,7 +374,8 @@ function TutorCourseEdit() {
                                         {sections.map((s, i) => (
                                             <SectionEditor key={s.id} section={s} index={i}
                                                 onChange={(v) => update(s.id, v)}
-                                                onRemove={() => remove(s.id)} />
+                                                onRemove={() => remove(s.id)} 
+                                                showEvaluation={false}/>
                                         ))}
                                     </CardContent>
                                 </Card>
@@ -479,7 +474,7 @@ function TutorCourseEdit() {
                                         width: '100%'
                                     }}
                                 >
-                                    ⚠️ Recuerda guardar tus cambios antes de finalizar la edición.
+                                    Guarda el borrador antes de enviar el curso a revisión.
                                 </Typography>
                                 <Button fullWidth variant="contained" size="large"
                                     startIcon={loading ? <CircularProgress size={15} sx={{ color: '#fff' }} /> : <SaveIcon />}
@@ -491,7 +486,7 @@ function TutorCourseEdit() {
                                         '&:hover': { backgroundColor: TEAL_MID, boxShadow: '0 6px 18px rgba(15,118,110,0.38)' },
                                         '&.Mui-disabled': { background: '#e2e8f0', boxShadow: 'none' }
                                     }}>
-                                    Guardar cambios
+                                    Guardar borrador
                                 </Button>
 
                                 <Button fullWidth variant="outlined" size="large"
@@ -504,28 +499,6 @@ function TutorCourseEdit() {
                                     }}>
                                     Enviar a revisión
                                 </Button>
-
-                                {/* ✨ Botón Finalizar Edición formateado idéntico a los anteriores */}
-                                <Button fullWidth variant="outlined" size="large"
-                                    startIcon={<CheckCircleIcon />} 
-                                    onClick={() => {
-                                        // 1. Ejecuta el guardado normal (así asegura los cambios)
-                                        handleSubmit('draft'); 
-                                        
-                                        // 2. Obliga a redirigir inmediatamente después de un breve delay para que termine el proceso
-                                        setTimeout(() => {
-                                            navigate('/tutor/courses');
-                                        }, 1000); // 1 segundo es suficiente para que la petición viaje segura
-                                    }} 
-                                    disabled={loading}
-                                    sx={{
-                                        py: 1.4, borderRadius: 3, fontWeight: 600, textTransform: 'none', fontSize: 13,
-                                        borderColor: TEAL, color: TEAL,
-                                        '&:hover': { background: TEAL_LIGHT, borderColor: TEAL_MID }
-                                    }}>
-                                    Finalizar Edición
-                                </Button>
-
                             </Stack>
                         </Grid>
                     </Grid>

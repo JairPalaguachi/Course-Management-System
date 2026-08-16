@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Box, Button, Card, CardContent, Chip, CircularProgress,
-    Container, Divider, FormControl, FormControlLabel, Grid,
+    Container, FormControl, Grid,
     IconButton, InputLabel, LinearProgress, MenuItem, Select,
-    Stack, Switch, TextField, Tooltip, Typography, CssBaseline,
+    Stack, TextField, Tooltip, Typography, CssBaseline,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -15,7 +15,6 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ImageIcon from '@mui/icons-material/Image';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import QuizIcon from '@mui/icons-material/Quiz';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import SaveIcon from '@mui/icons-material/Save';
 import SendIcon from '@mui/icons-material/Send';
@@ -79,11 +78,10 @@ const CONTENT_TYPES = [
     { type: 'pdf', label: 'PDF', icon: <PictureAsPdfIcon sx={{ fontSize: 15 }} />, color: '#b45309', bg: '#fffbeb' },
     { type: 'image', label: 'Imagen', icon: <ImageIcon sx={{ fontSize: 15 }} />, color: '#0891b2', bg: '#e0f2fe' },
     { type: 'text', label: 'Texto', icon: <TextSnippetIcon sx={{ fontSize: 15 }} />, color: '#475569', bg: '#f1f5f9' },
-    { type: 'quiz', label: 'Evaluación', icon: <QuizIcon sx={{ fontSize: 15 }} />, color: '#059669', bg: '#d1fae5' },
 ];
 
-const CONTENT_ICON = { video: <VideoLibraryIcon />, pdf: <PictureAsPdfIcon />, image: <ImageIcon />, text: <TextSnippetIcon />, quiz: <QuizIcon /> };
-const CONTENT_COLOR = { video: '#7c3aed', pdf: '#b45309', image: '#0891b2', text: '#475569', quiz: '#059669' };
+const CONTENT_ICON = { video: <VideoLibraryIcon />, pdf: <PictureAsPdfIcon />, image: <ImageIcon />, text: <TextSnippetIcon /> };
+const CONTENT_COLOR = { video: '#7c3aed', pdf: '#b45309', image: '#0891b2', text: '#475569'};
 
 let _sectionId = 2;
 let _contentId = 10;
@@ -95,13 +93,11 @@ function makeSection() {
         name: `Sección ${id - 1}`,
         open: true,
         contents: [],
-        hasEval: false,
-        eval: { name: '', maxScore: 100, minScore: 60, attempts: '1', instructions: '' },
     };
 }
 
 function makeContent(type) {
-    const labels = { video: 'Clase grabada', pdf: 'Documento.pdf', image: 'Recurso visual', text: 'Contenido de texto', quiz: 'Quiz de sección' };
+    const labels = { video: 'Clase grabada', pdf: 'Documento.pdf', image: 'Recurso visual', text: 'Contenido de texto'};
     return { id: _contentId++, type, label: labels[type] };
 }
 
@@ -161,7 +157,6 @@ function ProgressSidebar({ formData, hasCover }) {
 
 function SectionEditor({ section, index, onChange, onRemove }) {
     const field = (key) => (e) => onChange({ ...section, [key]: e.target.value });
-    const evalField = (key) => (e) => onChange({ ...section, eval: { ...section.eval, [key]: e.target.value } });
     const toggle = () => onChange({ ...section, open: !section.open });
     const addItem = (type) => onChange({ ...section, contents: [...section.contents, makeContent(type)] });
     const removeItem = (id) => onChange({ ...section, contents: section.contents.filter((c) => c.id !== id) });
@@ -271,57 +266,6 @@ function SectionEditor({ section, index, onChange, onRemove }) {
                             ))}
                         </Stack>
                     )}
-
-                    <Divider sx={{ mb: 2 }} />
-
-                    {/* toggle evaluación */}
-                    <FormControlLabel
-                        control={
-                            <Switch checked={section.hasEval} size="small"
-                                onChange={(e) => onChange({ ...section, hasEval: e.target.checked })}
-                                sx={{
-                                    '& .Mui-checked .MuiSwitch-thumb': { background: TEAL },
-                                    '& .Mui-checked + .MuiSwitch-track': { background: `${TEAL} !important` }
-                                }} />
-                        }
-                        label={<Typography sx={{ fontSize: 13, fontWeight: 500, color: '#374151' }}>Incluir evaluación calificada</Typography>}
-                    />
-
-                    {section.hasEval && (
-                        <Box sx={{
-                            mt: 1.5, p: { xs: 1.5, sm: 2 }, background: TEAL_LIGHT,
-                            borderRadius: 2, border: `1px solid #b2ddd8`
-                        }}>
-                            <Grid container spacing={1.5}>
-                                <Grid item xs={12} sm={6}>
-                                    <TextField fullWidth size="small" label="Nombre de la evaluación"
-                                        value={section.eval.name} onChange={evalField('name')} sx={inputSx} />
-                                </Grid>
-                                <Grid item xs={6} sm={3}>
-                                    <TextField fullWidth size="small" label="Puntaje máx." type="number"
-                                        value={section.eval.maxScore} onChange={evalField('maxScore')} sx={inputSx} />
-                                </Grid>
-                                <Grid item xs={6} sm={3}>
-                                    <TextField fullWidth size="small" label="Mínimo aprobatorio" type="number"
-                                        value={section.eval.minScore} onChange={evalField('minScore')} sx={inputSx} />
-                                </Grid>
-                                <Grid item xs={12} sm={4}>
-                                    <FormControl fullWidth size="small">
-                                        <InputLabel>Intentos</InputLabel>
-                                        <Select value={section.eval.attempts} label="Intentos"
-                                            onChange={evalField('attempts')} sx={inputSx}>
-                                            {['1', '2', '3', 'Ilimitados'].map((v) => <MenuItem key={v} value={v}>{v}</MenuItem>)}
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-                                <Grid item xs={12} sm={8}>
-                                    <TextField fullWidth size="small" label="Instrucciones para el estudiante"
-                                        value={section.eval.instructions} onChange={evalField('instructions')}
-                                        multiline rows={2} sx={inputSx} />
-                                </Grid>
-                            </Grid>
-                        </Box>
-                    )}
                 </Box>
             )}
         </Box>
@@ -374,8 +318,6 @@ function TutorCourseCreate() {
                 { id: 1, type: 'video', label: 'Bienvenida al curso' },
                 { id: 2, type: 'pdf', label: 'Guía de instalación.pdf' },
             ],
-            hasEval: false,
-            eval: { name: '', maxScore: 100, minScore: 60, attempts: '1', instructions: '' },
         },
     ]);
 
@@ -429,8 +371,7 @@ function TutorCourseCreate() {
     const buildInitialContent = () =>
         sections.map((s, i) => {
             const items = s.contents.map((c) => `  - [${c.type.toUpperCase()}] ${c.label}`).join('\n');
-            const evalStr = s.hasEval ? `\n  [EVALUACIÓN] ${s.eval.name || 'Sin nombre'} · máx ${s.eval.maxScore} pts` : '';
-            return `Sección ${i + 1}: ${s.name}\n${items}${evalStr}`;
+            return `Sección ${i + 1}: ${s.name}\n${items}`;
         }).join('\n\n');
 
     const handleSubmit = async (mode = 'draft') => {
@@ -464,9 +405,6 @@ function TutorCourseCreate() {
                         type: c.type,
                         label: c.label,
                     })),
-                    evaluation: s.hasEval
-                        ? s.eval
-                        : null,
                 })),
             };
 

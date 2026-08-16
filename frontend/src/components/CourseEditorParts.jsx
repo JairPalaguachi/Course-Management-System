@@ -75,7 +75,7 @@ export function ProgressSidebar({ formData, hasCover }) {
     );
 }
 
-export function SectionEditor({ section, index, onChange, onRemove, uploadFn }) {
+export function SectionEditor({ section, index, onChange, onRemove, uploadFn,showEvaluation = true, }) {
     const field = (key) => (e) => onChange({ ...section, [key]: e.target.value });
     const evalField = (key) => (e) => onChange({ ...section, eval: { ...section.eval, [key]: e.target.value } });
     const toggle = () => onChange({ ...section, open: !section.open });
@@ -193,49 +193,125 @@ export function SectionEditor({ section, index, onChange, onRemove, uploadFn }) 
                         </Stack>
                     )}
 
-                    <Divider sx={{ mb: 2 }} />
+                   {showEvaluation && (
+                        <>
+                            <Divider sx={{ mb: 2 }} />
 
-                    <FormControlLabel
-                        control={
-                            <Switch checked={section.hasEval} size="small"
-                                onChange={(e) => onChange({ ...section, hasEval: e.target.checked })}
-                                sx={{ '& .Mui-checked .MuiSwitch-thumb': { background: TEAL },
-                                      '& .Mui-checked + .MuiSwitch-track': { background: `${TEAL} !important` } }} />
-                        }
-                        label={<Typography sx={{ fontSize: 13, fontWeight: 500, color: '#374151' }}>Incluir evaluación calificada</Typography>}
-                    />
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={section.hasEval}
+                                        size="small"
+                                        onChange={(e) =>
+                                            onChange({
+                                                ...section,
+                                                hasEval: e.target.checked,
+                                            })
+                                        }
+                                        sx={{
+                                            '& .Mui-checked .MuiSwitch-thumb': {
+                                                background: TEAL,
+                                            },
+                                            '& .Mui-checked + .MuiSwitch-track': {
+                                                background: `${TEAL} !important`,
+                                            },
+                                        }}
+                                    />
+                                }
+                                label={
+                                    <Typography
+                                        sx={{
+                                            fontSize: 13,
+                                            fontWeight: 500,
+                                            color: '#374151',
+                                        }}
+                                    >
+                                        Incluir evaluación calificada
+                                    </Typography>
+                                }
+                            />
 
-                    {section.hasEval && (
-                        <Box sx={{ mt: 1.5, p: { xs: 1.5, sm: 2 }, background: TEAL_LIGHT, borderRadius: 2, border: `1px solid #b2ddd8` }}>
-                            <Grid container spacing={1.5}>
-                                <Grid item xs={12} sm={6}>
-                                    <TextField fullWidth size="small" label="Nombre de la evaluación"
-                                        value={section.eval.name} onChange={evalField('name')} sx={inputSx} />
-                                </Grid>
-                                <Grid item xs={6} sm={3}>
-                                    <TextField fullWidth size="small" label="Puntaje máx." type="number"
-                                        value={section.eval.maxScore} onChange={evalField('maxScore')} sx={inputSx} />
-                                </Grid>
-                                <Grid item xs={6} sm={3}>
-                                    <TextField fullWidth size="small" label="Mínimo aprobatorio" type="number"
-                                        value={section.eval.minScore} onChange={evalField('minScore')} sx={inputSx} />
-                                </Grid>
-                                <Grid item xs={12} sm={4}>
-                                    <FormControl fullWidth size="small">
-                                        <InputLabel>Intentos</InputLabel>
-                                        <Select value={section.eval.attempts} label="Intentos"
-                                            onChange={evalField('attempts')} sx={inputSx}>
-                                            {['1', '2', '3', 'Ilimitados'].map((v) => <MenuItem key={v} value={v}>{v}</MenuItem>)}
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-                                <Grid item xs={12} sm={8}>
-                                    <TextField fullWidth size="small" label="Instrucciones para el estudiante"
-                                        value={section.eval.instructions} onChange={evalField('instructions')}
-                                        multiline rows={2} sx={inputSx} />
-                                </Grid>
-                            </Grid>
-                        </Box>
+                            {section.hasEval && (
+                                <Box
+                                    sx={{
+                                        mt: 1.5,
+                                        p: { xs: 1.5, sm: 2 },
+                                        background: TEAL_LIGHT,
+                                        borderRadius: 2,
+                                        border: `1px solid #b2ddd8`,
+                                    }}
+                                >
+                                    <Grid container spacing={1.5}>
+                                        <Grid item xs={12} sm={6}>
+                                            <TextField
+                                                fullWidth
+                                                size="small"
+                                                label="Nombre de la evaluación"
+                                                value={section.eval.name}
+                                                onChange={evalField('name')}
+                                                sx={inputSx}
+                                            />
+                                        </Grid>
+
+                                        <Grid item xs={6} sm={3}>
+                                            <TextField
+                                                fullWidth
+                                                size="small"
+                                                label="Puntaje máx."
+                                                type="number"
+                                                value={section.eval.maxScore}
+                                                onChange={evalField('maxScore')}
+                                                sx={inputSx}
+                                            />
+                                        </Grid>
+
+                                        <Grid item xs={6} sm={3}>
+                                            <TextField
+                                                fullWidth
+                                                size="small"
+                                                label="Mínimo aprobatorio"
+                                                type="number"
+                                                value={section.eval.minScore}
+                                                onChange={evalField('minScore')}
+                                                sx={inputSx}
+                                            />
+                                        </Grid>
+
+                                        <Grid item xs={12} sm={4}>
+                                            <FormControl fullWidth size="small">
+                                                <InputLabel>Intentos</InputLabel>
+
+                                                <Select
+                                                    value={section.eval.attempts}
+                                                    label="Intentos"
+                                                    onChange={evalField('attempts')}
+                                                    sx={inputSx}
+                                                >
+                                                    {['1', '2', '3', 'Ilimitados'].map((v) => (
+                                                        <MenuItem key={v} value={v}>
+                                                            {v}
+                                                        </MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </FormControl>
+                                        </Grid>
+
+                                        <Grid item xs={12} sm={8}>
+                                            <TextField
+                                                fullWidth
+                                                size="small"
+                                                label="Instrucciones para el estudiante"
+                                                value={section.eval.instructions}
+                                                onChange={evalField('instructions')}
+                                                multiline
+                                                rows={2}
+                                                sx={inputSx}
+                                            />
+                                        </Grid>
+                                    </Grid>
+                                </Box>
+                            )}
+                        </>
                     )}
                 </Box>
             )}

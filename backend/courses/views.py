@@ -1,3 +1,4 @@
+import os
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
@@ -222,46 +223,271 @@ class TutorCourseDetailView(APIView):
         )
 
     def put(self, request, pk):
-        course = get_object_or_404(Course, pk=pk, tutor=request.user)
-        editable_statuses = [Course.Status.DRAFT, Course.Status.REJECTED]
+        course = get_object_or_404(
+            Course,
+            pk=pk,
+            tutor=request.user
+        )
+
+        editable_statuses = [
+            Course.Status.DRAFT,
+            Course.Status.REJECTED,
+        ]
 
         if course.status not in editable_statuses:
             return Response(
                 {
-                    "detail": "Solo puedes editar cursos en estado 'borrador' o 'rechazado'."
+                    "detail": (
+                        "Solo puedes editar cursos en estado "
+                        "'borrador' o 'rechazado'."
+                    )
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        course.title = request.data.get("title", course.title)
-        course.description = request.data.get("description", course.description)
-        if request.data.get("category"):
-            course.category_id = request.data.get("category")
-        course.duration = request.data.get("duration", course.duration)
-        course.level = request.data.get("level", course.level)
-        course.objectives = request.data.get("objectives", course.objectives)
-        course.preview_video = request.data.get("preview_video", course.preview_video)
-        course.language = request.data.get("language", course.language)
-        course.initial_content = request.data.get("initial_content", course.initial_content)
-        course.status = request.data.get("status", course.status)
-        course.save()
+        with transaction.atomic():
 
-        sections_data = request.data.get("sections_meta", [])
+            # ─────────────────────────────────────────────
+            # 1. Actualizar información principal del curso
+            # ─────────────────────────────────────────────
 
-        for sec_idx, sec_data in enumerate(sections_data):
-            section, _ = CourseSection.objects.get_or_create(
-                course=course,
-                name=sec_data.get("name", f"Sección {sec_idx+1}"),
-                defaults={"order": sec_idx},
+            course.title = request.data.get(
+                "title",
+                course.title
             )
 
-            for idx, content_data in enumerate(sec_data.get("contents", [])):
-                SectionContent.objects.get_or_create(
-                    section=section,
-                    type=content_data.get("type"),
-                    label=content_data.get("label"),
-                    defaults={"order": idx},
+            course.description = request.data.get(
+                "description",
+                course.description
+            )
+
+            if request.data.get("category"):
+                course.category_id = request.data.get("category")
+
+            course.duration = request.data.get(
+                "duration",
+                course.duration
+            )
+
+            course.level = request.data.get(
+                "level",
+                course.level
+            )
+
+            course.objectives = request.data.get(
+                "objectives",
+                course.objectives
+            )
+
+            course.preview_video = request.data.get(
+                "preview_video",
+                course.preview_video
+            )
+
+            course.language = request.data.get(
+                "language",
+                course.language
+            )
+
+            course.initial_content = request.data.get(
+                "initial_content",
+                course.initial_content
+            )
+
+            course.status = request.data.get(
+                "status",
+                course.status
+            )
+
+            course.save()
+
+            # ─────────────────────────────────────────────
+            # 2. Sincronizar secciones y contenidos
+            # ─────────────────────────────────────────────
+
+            sections_data = request.data.get(
+                "sections_meta",
+                []
+            )
+
+            # IDs de secciones que siguen existiendo
+            incoming_section_ids = []
+
+            for sec_idx, sec_data in enumerate(sections_data):
+
+                section_id = sec_data.get("id")
+
+                # -----------------------------------------
+                # Sección existente
+                # -----------------------------------------
+
+                if section_id:
+                    try:
+                        section = CourseSection.objects.get(
+                            id=section_id,
+                            course=course,
+                        )
+
+                        section.name = sec_data.get(
+                            "name",
+                            section.name
+                        )
+
+                        section.order = sec_idx
+                        section.save(
+                            update_fields=[
+                                "name",
+                                "order",
+                            ]
+                        )
+
+                    except CourseSection.DoesNotExist:
+                        section = CourseSection.objects.create(
+                            course=course,
+                            name=sec_data.get(
+                                "name",
+                                f"Sección {sec_idx + 1}"
+                            ),
+                            order=sec_idx,
+                        )
+
+                # -----------------------------------------
+                # Sección nueva
+                # -----------------------------------------
+
+                else:
+                    section = CourseSection.objects.create(
+                        course=course,
+                        name=sec_data.get(
+                            "name",
+                            f"Sección {sec_idx + 1}"
+                        ),
+                        order=sec_idx,
+                    )
+
+                incoming_section_ids.append(section.id)
+
+                # ─────────────────────────────────────────
+                # 3. Sincronizar contenidos de la sección
+                # ─────────────────────────────────────────
+
+                contents_data = sec_data.get(
+                    "contents",
+                    []
                 )
+
+                incoming_content_ids = []
+
+                for content_idx, content_data in enumerate(
+                    contents_data
+                ):
+
+                    content_id = content_data.get("id")
+
+                    # -------------------------------------
+                    # Contenido existente
+                    # -------------------------------------
+
+                    if content_id:
+                        try:
+                            content = SectionContent.objects.get(
+                                id=content_id,
+                                section=section,
+                            )
+
+                            content.type = content_data.get(
+                                "type",
+                                content.type
+                            )
+
+                            content.label = content_data.get(
+                                "label",
+                                content.label
+                            )
+
+                            content.body = content_data.get(
+                                "body",
+                                content.body
+                            )
+
+                            content.order = content_idx
+
+                            content.save(
+                                update_fields=[
+                                    "type",
+                                    "label",
+                                    "body",
+                                    "order",
+                                ]
+                            )
+
+                        except SectionContent.DoesNotExist:
+                            content = SectionContent.objects.create(
+                                section=section,
+                                type=content_data.get(
+                                    "type",
+                                    SectionContent.ContentType.TEXT,
+                                ),
+                                label=content_data.get(
+                                    "label",
+                                    "Contenido",
+                                ),
+                                body=content_data.get(
+                                    "body",
+                                    "",
+                                ),
+                                order=content_idx,
+                            )
+
+                    # -------------------------------------
+                    # Contenido nuevo
+                    # -------------------------------------
+
+                    else:
+                        content = SectionContent.objects.create(
+                            section=section,
+                            type=content_data.get(
+                                "type",
+                                SectionContent.ContentType.TEXT,
+                            ),
+                            label=content_data.get(
+                                "label",
+                                "Contenido",
+                            ),
+                            body=content_data.get(
+                                "body",
+                                "",
+                            ),
+                            order=content_idx,
+                        )
+
+                    incoming_content_ids.append(content.id)
+
+                # -----------------------------------------
+                # Eliminar contenidos que el tutor quitó
+                # -----------------------------------------
+
+                SectionContent.objects.filter(
+                    section=section
+                ).exclude(
+                    id__in=incoming_content_ids
+                ).delete()
+
+            # ─────────────────────────────────────────────
+            # 4. Eliminar secciones que el tutor quitó
+            # ─────────────────────────────────────────────
+
+            CourseSection.objects.filter(
+                course=course
+            ).exclude(
+                id__in=incoming_section_ids
+            ).delete()
+
+        # ─────────────────────────────────────────────────
+        # 5. Devolver el curso actualizado
+        # ─────────────────────────────────────────────────
+
+        course.refresh_from_db()
 
         return Response(
             {
@@ -269,16 +495,37 @@ class TutorCourseDetailView(APIView):
                 "course": {
                     "id": course.id,
                     "status": course.status,
+                    "cover_image": (
+                        request.build_absolute_uri(
+                            course.cover_image.url
+                        )
+                        if course.cover_image
+                        else None
+                    ),
                     "sections": [
                         {
-                            "id": sec.id,
-                            "name": sec.name,
+                            "id": section.id,
+                            "name": section.name,
                             "contents": [
-                                {"id": c.id, "type": c.type, "label": c.label}
-                                for c in sec.contents.all()
+                                {
+                                    "id": content.id,
+                                    "type": content.type,
+                                    "label": content.label,
+                                    "body": content.body,
+                                    "file_url": (
+                                        request.build_absolute_uri(
+                                            content.file.url
+                                        )
+                                        if content.file
+                                        else None
+                                    ),
+                                }
+                                for content in section.contents.all()
                             ],
                         }
-                        for sec in course.sections.prefetch_related("contents").all()
+                        for section in course.sections.prefetch_related(
+                            "contents"
+                        ).all()
                     ],
                 },
             },
@@ -351,6 +598,11 @@ class StudentCourseDetailView(APIView):
                                 "order": content.order,
                                 "file_url": (
                                     request.build_absolute_uri(content.file.url)
+                                    if content.file
+                                    else None
+                                ),
+                                "file_name": (
+                                    os.path.basename(content.file.name)
                                     if content.file
                                     else None
                                 ),

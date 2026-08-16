@@ -808,7 +808,7 @@ function ContentItem({ content }) {
                             color: "#334155",
                         }}
                     >
-                        {content.label || "Contenido"}
+                        {content.file_name || content.label || "Contenido"}
                     </Typography>
 
                     <Typography
@@ -911,7 +911,7 @@ function ContentItem({ content }) {
                                 color: "#92400e",
                             }}
                         >
-                            Material de lectura
+                            {content.file_name || content.label || "Documento.pdf"}
                         </Typography>
 
                         <Typography
@@ -1029,6 +1029,7 @@ ContentItem.propTypes = {
         label: PropTypes.string,
         body: PropTypes.string,
         file_url: PropTypes.string,
+        file_name: PropTypes.string,
     }).isRequired,
 };
 

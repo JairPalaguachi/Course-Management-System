@@ -96,7 +96,9 @@ export default function FileUploader({ contentId, contentType, onUploaded, uploa
             '&:hover': { borderColor: TEAL, color: TEAL, background: TEAL_LIGHT },
           }}
         >
-          {contentId ? `Subir ${contentType}` : 'Guarda los cambios para crear este contenido'}
+          {contentId
+            ? `Subir ${contentType}`
+            : 'Guarda el curso para habilitar la subida'}
         </Button>
       )}
 

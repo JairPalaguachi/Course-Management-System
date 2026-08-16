@@ -11,6 +11,8 @@ import SaveIcon from '@mui/icons-material/Save';
 import SendIcon from '@mui/icons-material/Send';
 import UploadIcon from '@mui/icons-material/Upload';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import Alert from '@mui/material/Alert';
+import AlertTitle from '@mui/material/AlertTitle';
 
 
 import {
@@ -120,6 +122,33 @@ function TutorCourseEdit() {
         return '';
     };
 
+    const parseBackendError = (error) => {
+        const data = error.response?.data;
+        if (!data) return 'Error de conexión con el servidor.';
+
+        // Si Django devuelve la página completa de error en HTML
+        if (typeof data === 'string' && (data.includes('<!DOCTYPE html>') || data.includes('<html'))) {
+            const titleMatch = data.match(/<title>(.*?)<\/title>/i);
+            if (titleMatch && titleMatch[1]) {
+                // Devuelve algo limpio como: "Error en el servidor: DataError at /api/tutor/courses/25/"
+                return `Error en el servidor: ${titleMatch[1]}`;
+            }
+            return 'No se pudieron guardar los cambios. Por favor, verifica que los campos de texto no sean demasiado largos e inténtalo de nuevo.';
+        }
+
+        if (data.detail) return data.detail;
+        if (data.message) return data.message;
+        if (typeof data === 'string') return data;
+
+        if (typeof data === 'object') {
+            const firstKey = Object.keys(data)[0];
+            const firstVal = data[firstKey];
+            if (Array.isArray(firstVal)) return `${firstKey}: ${firstVal[0]}`;
+            if (typeof firstVal === 'string') return `${firstVal}`;
+        }
+
+        return 'Ocurrió un error inesperado.';
+    };
 
     const handleSubmit = async (mode = 'draft') => {
         const statusToSend = mode === 'review' ? 'pending' : mode;
@@ -171,16 +200,7 @@ function TutorCourseEdit() {
 
         } catch (e) {
             console.error(e);
-
-            if (e.response?.status === 403) {
-                setError("No tienes permiso para editar este curso");
-            } else if (e.response?.status === 404) {
-                setError("Curso no encontrado");
-            } else if (e.response?.data) {
-                setError(typeof e.response.data === "string" ? e.response.data : JSON.stringify(e.response.data));
-            } else {
-                setError("Error al actualizar el curso");
-            }
+            setError(parseBackendError(e));
         } finally {
             setLoading(false);
         }
@@ -265,13 +285,32 @@ function TutorCourseEdit() {
 
                     {/* Alertas */}
                     {error && (
-                        <Box sx={{
-                            background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 3,
-                            px: 2, py: 1.5, mb: 2.5, color: '#b91c1c', fontSize: 14
-                        }}>
+                        <Alert
+                            severity="error"
+                            variant="outlined"
+                            onClose={() => setError('')}
+                            sx={{
+                            mb: 3,
+                            borderRadius: '10px',
+                            backgroundColor: 'rgba(239, 68, 68, 0.06)', // Fondo rosado suave
+                            color: '#991b1b',                             // Texto rojo sobrio
+                            borderColor: 'rgba(239, 68, 68, 0.25)',     // Borde muy tenue
+                            fontSize: '0.875rem',
+                            fontWeight: 500,
+                            py: 0.5,                                      // Altura más compacta
+                            alignItems: 'center',
+                            '& .MuiAlert-icon': {
+                                color: '#dc2626',                           // Ícono rojizo en sintonía
+                                fontSize: '1.25rem',
+                            },
+                            '& .MuiAlert-action': {
+                                pt: 0,                                      // Alineación limpia del botón cerrar
+                            }
+                            }}
+                        >
                             {error}
-                        </Box>
-                    )}
+                        </Alert>
+                        )}
                     {success && (
                         <Box sx={{
                             background: TEAL_MID, borderRadius: 3, px: 2, py: 1.5, mb: 2.5,

@@ -9,7 +9,7 @@ function CourseCard({ course, onClick }) {
             sx={{
                 borderRadius: 4,
                 overflow: "hidden",
-                height: "100%",
+                height: "430",
                 display: "flex",
                 flexDirection: "column",
                 maxWidth: 260,

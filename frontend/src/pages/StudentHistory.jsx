@@ -292,19 +292,21 @@ function StudentHistory() {
                             </Typography>
                         </Box>
 
-                        <Stack direction="row" spacing={1.5}>
+                        <Stack direction="row" spacing={1} alignItems="center">
                             <Button
-                                variant="outlined"
+                                variant="text"
                                 startIcon={<ArrowBackIcon />}
                                 onClick={() => navigate("/student/dashboard")}
                                 sx={{
                                     color: "#ffffff",
-                                    borderColor: "rgba(255,255,255,0.4)",
+                                    borderRadius: 2,
+                                    px: 2,
+                                    py: 0.8,
                                     textTransform: "none",
-                                    fontWeight: 700,
+                                    fontWeight: 600,
+                                    fontSize: "0.875rem",
                                     "&:hover": {
-                                        borderColor: "#ffffff",
-                                        backgroundColor: "rgba(255,255,255,0.08)",
+                                        backgroundColor: "rgba(255, 255, 255, 0.12)",
                                     },
                                 }}
                             >
@@ -315,10 +317,17 @@ function StudentHistory() {
                                 startIcon={<LogoutIcon />}
                                 onClick={handleLogout}
                                 sx={{
-                                    color: "rgba(255,255,255,0.8)",
+                                    color: "rgba(255, 255, 255, 0.75)",
+                                    borderRadius: 2,
+                                    px: 2,
+                                    py: 0.8,
                                     textTransform: "none",
-                                    fontWeight: 700,
-                                    "&:hover": { backgroundColor: "rgba(255,255,255,0.08)" },
+                                    fontWeight: 600,
+                                    fontSize: "0.875rem",
+                                    "&:hover": {
+                                        color: "#ef4444", // Tono rojo suave al pasar el mouse por Cerrar Sesión
+                                        backgroundColor: "rgba(239, 68, 68, 0.1)",
+                                    },
                                 }}
                             >
                                 Cerrar sesión

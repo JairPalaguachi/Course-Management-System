@@ -15,7 +15,6 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
-    Grid,
     Pagination,
     Stack,
     Typography,
@@ -120,11 +119,12 @@ function EnrolledCourseCard({ enrollment, onGoToCourse }) {
             sx={{
                 borderRadius: 4,
                 overflow: "hidden",
+                width: "100%",
+                minWidth: "260px",
                 height: "100%",
+                minHeight: "440px",
                 display: "flex",
                 flexDirection: "column",
-                maxWidth: 260,
-                width: "100%",
                 margin: "0 auto",
                 border: "1px solid #e2e8f0",
                 transition: "all 0.25s ease",
@@ -262,12 +262,10 @@ function CatalogCourseCard({ course, isEnrolled, onEnroll, onViewDetail }) {
             sx={{
                 borderRadius: 4,
                 overflow: "hidden",
-                height: "100%",
+                width: "100%",
+                height: "100%", // Forzar altura total de la fila
                 display: "flex",
                 flexDirection: "column",
-                maxWidth: 260,
-                width: "100%",
-                margin: "0 auto",
                 border: "1px solid #e2e8f0",
                 transition: "all 0.25s ease",
                 "&:hover": {
@@ -346,11 +344,21 @@ function CatalogCourseCard({ course, isEnrolled, onEnroll, onViewDetail }) {
                     {course.description || "Sin descripción disponible."}
                 </Typography>
 
-                {course.tutor_name && (
-                    <Typography sx={{ fontSize: "0.78rem", color: "#94a3b8", mb: 2 }}>
-                        Tutor: <strong style={{ color: "#475569" }}>{course.tutor_name}</strong>
-                    </Typography>
-                )}
+                <Box sx={{ minHeight: 32, mb: 1 }}>
+                    {course.tutor_name && (
+                        <Typography
+                            sx={{
+                                fontSize: "0.78rem",
+                                color: "#94a3b8",
+                            }}
+                        >
+                            Tutor:{" "}
+                            <strong style={{ color: "#475569" }}>
+                                {course.tutor_name}
+                            </strong>
+                        </Typography>
+                    )}
+                </Box>
 
                 <Stack spacing={1} sx={{ mt: "auto" }}>
                     {isEnrolled ? (
@@ -1108,18 +1116,31 @@ useEffect(() => {
                         </Box>
                     ) : (
                         <>
-                            <Grid container spacing={4} sx={{ mb: 4 }}>
+                            {/* Contenido del catálogo con CSS Grid */}
+                            <Box
+                                sx={{
+                                    display: "grid",
+                                    gridTemplateColumns: {
+                                        xs: "1fr",                  // 1 columna en móviles
+                                        sm: "repeat(2, 1fr)",        // 2 columnas en pantallas pequeñas
+                                        md: "repeat(3, 1fr)",        // 3 columnas en medianas
+                                        lg: "repeat(4, 1fr)",        // 4 columnas en grandes
+                                    },
+                                    gap: 3,                          // Espaciado uniforme entre tarjetas
+                                    mb: 4,
+                                    alignItems: "stretch",           // Iguala la altura de todas las tarjetas
+                                }}
+                            >
                                 {catalogCourses.map((course) => (
-                                    <Grid xs={12} sm={6} md={4} lg={3} key={course.id}>
-                                        <CatalogCourseCard
-                                            course={course}
-                                            isEnrolled={enrolledIds.has(course.id)}
-                                            onEnroll={setEnrollingCourse}
-                                            onViewDetail={setSelectedCourse}
-                                        />
-                                    </Grid>
+                                    <CatalogCourseCard
+                                        key={course.id}
+                                        course={course}
+                                        isEnrolled={enrolledIds.has(course.id)}
+                                        onEnroll={setEnrollingCourse}
+                                        onViewDetail={setSelectedCourse}
+                                    />
                                 ))}
-                            </Grid>
+                            </Box>
 
                             {totalPages > 1 && (
                                 <Stack alignItems="center">

@@ -62,6 +62,14 @@ function TutorDashboard() {
     const [loadingLookup, setLoadingLookup] = useState(false);
 
     const statusColors = {
+        // Estados provenientes del backend en inglés
+        draft: { color: "default", label: "Borrador" },
+        pending_approval: { color: "warning", label: "Pendiente de aprobación" },
+        pending: { color: "warning", label: "Pendiente de aprobación" },
+        published: { color: "success", label: "Publicado" },
+        rejected: { color: "error", label: "Rechazado" },
+
+        // Mantén las claves en español por si acaso
         borrador: { color: "default", label: "Borrador" },
         pendiente_aprobacion: { color: "warning", label: "Pendiente de aprobación" },
         publicado: { color: "success", label: "Publicado" },

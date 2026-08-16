@@ -122,31 +122,48 @@ function TutorCourseEdit() {
     };
 
     const parseBackendError = (error) => {
-        const data = error.response?.data;
-        if (!data) return 'Error de conexión con el servidor.';
+        let data = error.response?.data;
 
-        // Si Django devuelve la página completa de error en HTML
-        if (typeof data === 'string' && (data.includes('<!DOCTYPE html>') || data.includes('<html'))) {
-            const titleMatch = data.match(/<title>(.*?)<\/title>/i);
-            if (titleMatch && titleMatch[1]) {
-                // Devuelve algo limpio como: "Error en el servidor: DataError at /api/tutor/courses/25/"
-                return `Error en el servidor: ${titleMatch[1]}`;
+        // Si no hay respuesta de red
+        if (!error.response) return 'Error de conexión con el servidor.';
+
+        // Si la respuesta vino como string (ej. JSON serializado o HTML)
+        if (typeof data === 'string') {
+            try {
+                data = JSON.parse(data);
+            } catch {
+                // Si el servidor respondió con 500 HTML por exceder caracteres o falla de BD
+                if (error.response.status === 500) {
+                    return 'El texto ingresado excede el límite permitido de caracteres o contiene información inválida.';
+                }
+                return 'Ocurrió un error en el servidor al procesar la solicitud.';
             }
-            return 'No se pudieron guardar los cambios. Por favor, verifica que los campos de texto no sean demasiado largos e inténtalo de nuevo.';
         }
 
-        if (data.detail) return data.detail;
-        if (data.message) return data.message;
-        if (typeof data === 'string') return data;
+        // Si Django REST Framework devolvió errores de validación de campos (Status 400)
+        if (typeof data === 'object' && data !== null) {
+            if (data.detail) return data.detail;
+            if (data.message) return data.message;
 
-        if (typeof data === 'object') {
             const firstKey = Object.keys(data)[0];
             const firstVal = data[firstKey];
-            if (Array.isArray(firstVal)) return `${firstKey}: ${firstVal[0]}`;
-            if (typeof firstVal === 'string') return `${firstVal}`;
+
+            const fieldLabels = {
+                title: 'Título',
+                description: 'Descripción',
+                category: 'Categoría',
+                duration: 'Duración',
+                level: 'Nivel',
+                objectives: 'Objetivos',
+            };
+
+            const label = fieldLabels[firstKey] || firstKey;
+            const message = Array.isArray(firstVal) ? firstVal[0] : firstVal;
+
+            return `${label}: ${message}`;
         }
 
-        return 'Ocurrió un error inesperado.';
+        return 'Ocurrió un error inesperado al guardar.';
     };
 
     const handleSubmit = async (mode = 'draft') => {
@@ -333,10 +350,16 @@ function TutorCourseEdit() {
                                             Información básica
                                         </Typography>
 
-                                        <TextField fullWidth label="Título del curso *" size="small"
-                                            value={formData.title} onChange={field('title')}
+                                        <TextField 
+                                            fullWidth 
+                                            label="Título del curso *" 
+                                            size="small"
+                                            value={formData.title} 
+                                            onChange={field('title')}
                                             placeholder="Ej. Introducción a Python para principiantes"
-                                            sx={{ mb: 2, ...inputSx }} />
+                                            inputProps={{ maxLength: 200 }} // 👈 Limita el ingreso a 200 caracteres
+                                            sx={{ mb: 2, ...inputSx }} 
+                                        />
 
                                         <TextField fullWidth label="Descripción corta *" size="small" multiline rows={3}
                                             value={formData.description} onChange={field('description')}

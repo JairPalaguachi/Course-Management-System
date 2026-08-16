@@ -1,3 +1,4 @@
+import os
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
@@ -351,6 +352,11 @@ class StudentCourseDetailView(APIView):
                                 "order": content.order,
                                 "file_url": (
                                     request.build_absolute_uri(content.file.url)
+                                    if content.file
+                                    else None
+                                ),
+                                "file_name": (
+                                    os.path.basename(content.file.name)
                                     if content.file
                                     else None
                                 ),

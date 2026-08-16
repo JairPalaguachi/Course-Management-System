@@ -45,10 +45,32 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class SectionContentSerializer(serializers.ModelSerializer):
     file_url = serializers.SerializerMethodField()
+    file_name = serializers.SerializerMethodField()
 
     class Meta:
         model = SectionContent
-        fields = ["id", "type", "label", "order", "file_url", "body"]
+        fields = [
+            "id",
+            "type",
+            "label",
+            "order",
+            "file_url",
+            "file_name",
+            "body",
+        ]
+
+    def get_file_url(self, obj):
+        request = self.context.get("request")
+        if not obj.file:
+            return None
+        if request:
+            return request.build_absolute_uri(obj.file.url)
+        return obj.file.url
+
+    def get_file_name(self, obj):
+        if not obj.file:
+            return None
+        return os.path.basename(obj.file.name)
 
     def get_file_url(self, obj):
         request = self.context.get("request")

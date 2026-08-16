@@ -1060,7 +1060,7 @@ function ContentItem({ content }) {
                             color: "#334155",
                         }}
                     >
-                        {content.label || "Contenido"}
+                        {content.file_name || content.label || "Contenido"}
                     </Typography>
 
                     <Typography
@@ -1263,6 +1263,7 @@ SectionCard.propTypes = {
                     PropTypes.string,
                 ]).isRequired,
                 type: PropTypes.string,
+                file_name: PropTypes.string,
                 label: PropTypes.string,
                 body: PropTypes.string,
                 file_url: PropTypes.string,
@@ -1279,6 +1280,7 @@ ContentItem.propTypes = {
         ]).isRequired,
         type: PropTypes.string,
         label: PropTypes.string,
+        file_name: PropTypes.string,
         body: PropTypes.string,
         file_url: PropTypes.string,
     }).isRequired,

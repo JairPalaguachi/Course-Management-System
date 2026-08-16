@@ -34,7 +34,6 @@ export const CONTENT_TYPES = [
     { type: 'pdf', label: 'PDF', icon: 'pdf', color: '#b45309', bg: '#fffbeb' },
     { type: 'image', label: 'Imagen', icon: 'image', color: '#0891b2', bg: '#e0f2fe' },
     { type: 'text', label: 'Texto', icon: 'text', color: '#475569', bg: '#f1f5f9' },
-    { type: 'quiz', label: 'Evaluación', icon: 'quiz', color: '#059669', bg: '#d1fae5' },
 ];
 
 export const CONTENT_COLOR = {
@@ -42,7 +41,6 @@ export const CONTENT_COLOR = {
     pdf: '#b45309',
     image: '#0891b2',
     text: '#475569',
-    quiz: '#059669',
 };
 
 let _contentId = 10;
@@ -62,7 +60,6 @@ export function makeContent(type) {
         pdf: 'Documento.pdf',
         image: 'Recurso visual',
         text: 'Contenido de texto',
-        quiz: 'Quiz de sección',
     };
     return { id: _contentId++, type, label: labels[type] };
 }

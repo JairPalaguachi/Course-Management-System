@@ -135,7 +135,7 @@ function AdminCourseEdit() {
             }
             if (result.status) setStatus(result.status);
 
-            setSuccess('Curso actualizado exitosamente.');
+            navigate('/admin/dashboard');
         } catch (e) {
             console.error(e);
             if (e.response?.status === 403) setError('No tienes permiso para editar este curso.');

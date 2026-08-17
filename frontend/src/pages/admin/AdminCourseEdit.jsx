@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
     Box, Button, Card, CardContent, Chip, CircularProgress,
-    Container, FormControl, FormControlLabel, Grid, InputLabel,
-    MenuItem, Select, Stack, Switch, TextField, Typography, CssBaseline,
+    Container, FormControl, Grid, InputLabel,
+    MenuItem, Select, Stack, TextField, Typography, CssBaseline,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -293,24 +293,6 @@ function AdminCourseEdit() {
                                     </CardContent>
                                 </Card>
 
-                                <Card sx={cardSx}>
-                                    <CardContent sx={{ p: { xs: 2, sm: 3.5 } }}>
-                                        <Typography sx={sectionTitleSx}>Opciones administrativas</Typography>
-                                        <FormControlLabel
-                                            control={
-                                                <Switch checked={formData.is_active}
-                                                    onChange={(e) => setFormData((p) => ({ ...p, is_active: e.target.checked }))}
-                                                    sx={{ '& .Mui-checked .MuiSwitch-thumb': { background: TEAL },
-                                                          '& .Mui-checked + .MuiSwitch-track': { background: `${TEAL} !important` } }} />
-                                            }
-                                            label={<Typography sx={{ fontSize: 13, fontWeight: 500 }}>Curso activo en la plataforma</Typography>}
-                                            sx={{ mb: 2 }}
-                                        />
-                                        <TextField fullWidth size="small" label="Motivo de rechazo (si aplica)"
-                                            value={formData.rejection_reason} onChange={field('rejection_reason')}
-                                            multiline rows={2} sx={inputSx} />
-                                    </CardContent>
-                                </Card>
                             </Stack>
                         </Grid>
 

@@ -1,437 +1,32 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
     Box, Button, Card, CardContent, Chip, CircularProgress,
-    Container, Divider, FormControl, FormControlLabel, Grid,
-    IconButton, InputLabel, LinearProgress, MenuItem, Select,
-    Stack, Switch, TextField, Tooltip, Typography, CssBaseline,
+    Container, FormControl, Grid, InputLabel,
+    MenuItem, Select, Stack, TextField, Typography, CssBaseline,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import DeleteOutlineIcon from '@mui/icons-material/Delete';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ImageIcon from '@mui/icons-material/Image';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import QuizIcon from '@mui/icons-material/Quiz';
-import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import SaveIcon from '@mui/icons-material/Save';
 import SendIcon from '@mui/icons-material/Send';
-import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import UploadIcon from '@mui/icons-material/Upload';
-import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import Alert from '@mui/material/Alert';
 
-import FileUploader from '../components/FileUploader';
+
 import {
     getCourseDetail,
     updateTutorCourse,
     getCategories,
-    uploadCourseCover
-} from "../services/courseService";
-
-import { useEffect } from 'react';
-
-const TEAL_DARK = '#0a2e2b';
-const TEAL_MID = '#10423f';
-const TEAL = '#0f766e';
-const TEAL_LIGHT = '#f0faf8';
-
-const cardSx = {
-    backgroundColor: '#ffffff',
-    border: '1px solid #e2e8f0',
-    borderRadius: 4,           
-    boxShadow: 'none',
-};
-
-const sectionTitleSx = {
-    fontSize: 12,
-    fontWeight: 700,
-    color: '#64748b',
-    letterSpacing: '0.6px',
-    textTransform: 'uppercase',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 0.8,
-    mb: 2,
-};
-
-const inputSx = {
-    '& .MuiOutlinedInput-root': {
-        borderRadius: '8px',
-        backgroundColor: '#fff',
-        '&.Mui-focused fieldset': { borderColor: TEAL },
-    },
-    '& label.Mui-focused': { color: TEAL },
-};
-
-
-const LEVELS = [
-    { value: 'beginner', label: 'Principiante' },
-    { value: 'intermediate', label: 'Intermedio' },
-    { value: 'advanced', label: 'Avanzado' }
-];
-
-const CONTENT_TYPES = [
-    { type: 'video', label: 'Video', icon: <VideoLibraryIcon sx={{ fontSize: 15 }} />, color: '#7c3aed', bg: '#ede9fe' },
-    { type: 'pdf', label: 'PDF', icon: <PictureAsPdfIcon sx={{ fontSize: 15 }} />, color: '#b45309', bg: '#fffbeb' },
-    { type: 'image', label: 'Imagen', icon: <ImageIcon sx={{ fontSize: 15 }} />, color: '#0891b2', bg: '#e0f2fe' },
-    { type: 'text', label: 'Texto', icon: <TextSnippetIcon sx={{ fontSize: 15 }} />, color: '#475569', bg: '#f1f5f9' },
-    { type: 'quiz', label: 'Evaluación', icon: <QuizIcon sx={{ fontSize: 15 }} />, color: '#059669', bg: '#d1fae5' },
-];
-
-const CONTENT_ICON = { video: <VideoLibraryIcon />, pdf: <PictureAsPdfIcon />, image: <ImageIcon />, text: <TextSnippetIcon />, quiz: <QuizIcon /> };
-const CONTENT_COLOR = { video: '#7c3aed', pdf: '#b45309', image: '#0891b2', text: '#475569', quiz: '#059669' };
-
-//let _sectionId = 2;
-let _contentId = 10;
-
-const makeSection = () => ({
-    id: Date.now(),
-    name: 'Sección nueva',
-    open: true,
-    contents: [],
-    hasEval: false,
-    eval: {
-        name: '',
-        maxScore: 100,
-        minScore: 60,
-        attempts: '1',
-        instructions: '',
-    },
-});
-
-function makeContent(type) {
-    const labels = { video: 'Clase grabada', pdf: 'Documento.pdf', image: 'Recurso visual', text: 'Contenido de texto', quiz: 'Quiz de sección' };
-    return { id: _contentId++, type, label: labels[type] };
-}
-
-
-function normalizeSections(courseSections = []) {
-    return courseSections.map((section, index) => ({
-        id: section.id ? `saved-section-${section.id}` : `section-${index}`,
-        savedId: section.id ?? null,
-        name: section.name || `Seccion ${index + 1}`,
-        open: false,
-        contents: (section.contents || []).map((content, contentIndex) => ({
-            id: content.id ? `saved-content-${content.id}` : `content-${index}-${contentIndex}`,
-            savedId: content.id ?? null,
-            type: content.type,
-            label: content.label || '',
-            body: content.body || '',
-            file_url: content.file_url || content.file || null
-        })),
-        hasEval: Boolean(section.evaluation),
-        eval: {
-            name: section.evaluation?.name || '',
-            maxScore: section.evaluation?.max_score ?? 100,
-            minScore: section.evaluation?.min_score ?? 60,
-            attempts: section.evaluation?.attempts || '1',
-            instructions: section.evaluation?.instructions || '',
-        },
-    }));
-}
-
-function buildSectionsPayload(sections) {
-    return sections.map((section) => ({
-        id: section.savedId || undefined,
-        name: section.name,
-        contents: section.contents.map((content) => ({
-            id: content.savedId || undefined,
-            type: content.type,
-            label: content.label,
-            body: content.body || '',
-        })),
-        evaluation: section.hasEval ? {
-            name: section.eval.name,
-            max_score: Number(section.eval.maxScore) || 100,
-            min_score: Number(section.eval.minScore) || 0,
-            attempts: section.eval.attempts || '1',
-            instructions: section.eval.instructions || '',
-        } : null,
-    }));
-}
-
-function buildInitialContent(sections) {
-    return sections.map((section, index) => {
-        const items = section.contents
-            .map((content) => `  - [${content.type.toUpperCase()}] ${content.label}`)
-            .join('\n');
-        const evalText = section.hasEval
-            ? `\n  [EVALUACION] ${section.eval.name || 'Sin nombre'} - max ${section.eval.maxScore} pts`
-            : '';
-        return `Seccion ${index + 1}: ${section.name}\n${items}${evalText}`;
-    }).join('\n\n');
-}
-function SideLabel({ text }) {
-    return (
-        <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#64748b', letterSpacing: '0.6px', textTransform: 'uppercase', mb: 1.5 }}>
-            {text}
-        </Typography>
-    );
-}
-
-
-function ProgressSidebar({ formData, hasCover }) {
-    const checks = {
-        title: { done: formData.title.trim().length > 0, label: 'Título añadido' },
-        desc: { done: formData.description.trim().length > 0, label: 'Descripción' },
-        category: { done: formData.category !== '', label: 'Categoría' },
-        duration: { done: Number(formData.duration) > 0, label: 'Duración' },
-        cover: { done: hasCover, label: 'Portada del curso' },
-    };
-    const filled = Object.values(checks).filter((c) => c.done).length;
-    const pct = Math.round((filled / Object.keys(checks).length) * 100);
-
-    return (
-        <Card sx={cardSx}>
-            <CardContent sx={{ p: 2.5 }}>
-                <SideLabel text="Progreso del curso" />
-                <LinearProgress
-                    variant="determinate" value={pct}
-                    sx={{
-                        height: 6, borderRadius: 10, backgroundColor: '#e2e8f0', mb: 0.75,
-                        '& .MuiLinearProgress-bar': { backgroundColor: TEAL }
-                    }}
-                />
-                <Typography sx={{ fontSize: 11.5, color: '#64748b', textAlign: 'right', mb: 1.5 }}>
-                    {pct}% completado
-                </Typography>
-                <Stack spacing={0.75}>
-                    {Object.values(checks).map((c) => (
-                        <Box key={c.label} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            {c.done
-                                ? <CheckCircleIcon sx={{ fontSize: 15, color: TEAL }} />
-                                : <RadioButtonUncheckedIcon sx={{ fontSize: 15, color: '#cbd5e1' }} />}
-                            <Typography sx={{ fontSize: 13, color: c.done ? TEAL_MID : '#94a3b8' }}>
-                                {c.label}
-                            </Typography>
-                        </Box>
-                    ))}
-                </Stack>
-            </CardContent>
-        </Card>
-    );
-}
-
-
-
-function SectionEditor({ section, index, onChange, onRemove }) {
-    const field = (key) => (e) => onChange({ ...section, [key]: e.target.value });
-    const evalField = (key) => (e) => onChange({ ...section, eval: { ...section.eval, [key]: e.target.value } });
-    const toggle = () => onChange({ ...section, open: !section.open });
-    const addItem = (type) => onChange({ ...section, contents: [...section.contents, makeContent(type)] });
-    const removeItem = (id) => onChange({ ...section, contents: section.contents.filter((c) => c.id !== id) });
-    const renameItem = (id, val) => onChange({ ...section, contents: section.contents.map((c) => c.id === id ? { ...c, label: val } : c) });
-
-    return (
-        <Box sx={{ border: '1.5px solid #e2e8f0', borderRadius: 3, mb: 1.5, overflow: 'hidden' }}>
-
-            {/* cabecera de sección */}
-            <Box onClick={toggle}
-                sx={{
-                    display: 'flex', alignItems: 'center', gap: 1.25, px: 2, py: 1.5,
-                    background: '#f8fafc', cursor: 'pointer', userSelect: 'none'
-                }}>
-                <DragIndicatorIcon sx={{ color: '#cbd5e1', fontSize: 20, flexShrink: 0 }} />
-                <Box sx={{
-                    width: 24, height: 24, borderRadius: '6px', background: TEAL, flexShrink: 0,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}>
-                    <Typography sx={{ color: '#fff', fontSize: 11, fontWeight: 700 }}>{index + 1}</Typography>
-                </Box>
-                <Typography sx={{
-                    flex: 1, fontSize: 14, fontWeight: 600, color: TEAL_DARK,
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-                }}>
-                    {section.name || `Sección ${index + 1}`}
-                </Typography>
-                <Tooltip title="Eliminar sección">
-                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); onRemove(); }}
-                        sx={{ color: '#94a3b8', '&:hover': { color: '#e11d48' } }}>
-                        <DeleteOutlineIcon sx={{ fontSize: 18 }} />
-                    </IconButton>
-                </Tooltip>
-                {section.open
-                    ? <ExpandLessIcon sx={{ color: '#94a3b8', fontSize: 20 }} />
-                    : <ExpandMoreIcon sx={{ color: '#94a3b8', fontSize: 20 }} />}
-            </Box>
-
-            {/* cuerpo de sección */}
-            {section.open && (
-                <Box sx={{ p: { xs: 1.5, sm: 2.5 }, borderTop: '1px solid #e2e8f0' }}>
-
-                    <TextField fullWidth size="small" label="Nombre de la sección"
-                        value={section.name} onChange={field('name')} sx={{ mb: 2, ...inputSx }} />
-
-                    {/* chips de tipo de contenido */}
-                    <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#64748b', mb: 1, textTransform: 'uppercase', letterSpacing: '.5px' }}>
-                        Agregar contenido
-                    </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 1.5 }}>
-                        {CONTENT_TYPES.map(({ type, label, icon, color, bg }) => (
-                            <Chip key={type} label={label} icon={icon} size="small" onClick={() => addItem(type)}
-                                sx={{
-                                    cursor: 'pointer', background: bg, color, border: `1.5px solid ${color}50`,
-                                    fontWeight: 600, fontSize: 11.5, '& .MuiChip-icon': { color }
-                                }} />
-                        ))}
-                    </Box>
-
-                    {/* lista de contenidos actualizada con FileUploader */}
-                    {section.contents.length > 0 && (
-                        <Stack spacing={0.5} sx={{ mb: 2 }}>
-                            {section.contents.map((c) => (
-                                <Box key={c.id}
-                                    sx={{
-                                        background: '#f8fafc', border: '1px solid #e2e8f0',
-                                        borderRadius: 2, px: 1.5, py: 1
-                                    }}>
-                                    {/* Fila de nombre + eliminar */}
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Box sx={{ color: CONTENT_COLOR[c.type], display: 'flex', flexShrink: 0 }}>
-                                            {CONTENT_ICON[c.type]}
-                                        </Box>
-                                        <TextField
-                                            size="small" value={c.label} variant="standard"
-                                            onChange={(e) => renameItem(c.id, e.target.value)}
-                                            sx={{
-                                                flex: 1,
-                                                '& .MuiInput-underline:before': { borderColor: 'transparent' },
-                                                '& .MuiInput-underline:hover:before': { borderColor: '#e2e8f0' }
-                                            }}
-                                            inputProps={{ style: { fontSize: 13 } }}
-                                        />
-                                        <IconButton size="small" onClick={() => removeItem(c.id)}
-                                            sx={{ color: '#cbd5e1', '&:hover': { color: '#e11d48' } }}>
-                                            <DeleteOutlineIcon sx={{ fontSize: 15 }} />
-                                        </IconButton>
-                                    </Box>
-
-                                    {/* 📥 CONDICIONAL: Si el archivo ya existe muestra éxito, si no, el Uploader */}
-                                    {['video', 'pdf', 'image'].includes(c.type) && (
-                                        <Box sx={{ mt: 1 }}>
-                                            {c.file_url ? (
-                                                /* 🎉 Caso 1: El archivo ya está guardado en el backend o subido */
-                                                <Box sx={{ 
-                                                    display: 'flex', 
-                                                    alignItems: 'center', 
-                                                    justifyContent: 'space-between',
-                                                    background: '#f0fdfa', // Fondo verde sutil
-                                                    border: '1px solid #99f6e4', 
-                                                    borderRadius: 2, 
-                                                    px: 1.5, 
-                                                    py: 1 
-                                                }}>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, flex: 1 }}>
-                                                        <CheckCircleIcon sx={{ fontSize: 16, color: TEAL, flexShrink: 0 }} />
-                                                        <Typography 
-                                                            noWrap // 👈 Evita que nombres larguísimos rompan el diseño, les pone "..."
-                                                            sx={{ 
-                                                                fontSize: 12, 
-                                                                color: TEAL, 
-                                                                fontWeight: 600,
-                                                                textDecoration: 'none'
-                                                            }}
-                                                        >
-                                                            {/* 🔄 Muestra c.file_name si existe; si no, extrae el nombre del final de la URL */}
-                                                            {c.file_name || (typeof c.file_url === 'string' ? decodeURIComponent(c.file_url.split('/').pop().split('?')[0]) : 'Archivo cargado')}
-                                                        </Typography>
-                                                    </Box>
-                                                    
-                                                    {/* Botón para vaciar la url por si quiere volver a subir otro archivo */}
-                                                        <IconButton 
-                                                            size="small" 
-                                                            onClick={() => onChange({
-                                                                ...section,
-                                                                contents: section.contents.map((x) => 
-                                                                    x.id === c.id ? { ...x, file_url: null, file_name: null } : x
-                                                                )
-                                                            })}
-                                                            sx={{ color: '#cbd5e1', '&:hover': { color: '#e11d48' }, ml: 1, flexShrink: 0 }}
-                                                        >
-                                                            <DeleteOutlineIcon sx={{ fontSize: 15 }} />
-                                                        </IconButton>
-                                                </Box>
-                                            ) : (
-                                                /* 📥 Caso 2: No hay archivo, renderiza el componente para subirlo */
-                                                <FileUploader
-                                                    contentId={c.savedId}  
-                                                    contentType={c.type}  
-                                                    label={c.label}
-                                                    onUploaded={({ file_url, file_name }) => // 👈 Si el uploader te da el nombre, lo atrapamos aquí
-                                                        onChange({
-                                                            ...section,
-                                                            contents: section.contents.map((x) =>
-                                                                x.id === c.id ? { ...x, file_url, file_name: file_name || null } : x
-                                                            ),
-                                                        })
-                                                    }
-                                                />
-                                            )}
-                                        </Box>
-                                    )}
-                                </Box>
-                            ))}
-                        </Stack>
-                    )}
-
-                    <Divider sx={{ mb: 2 }} />
-
-                    {/* toggle evaluación */}
-                    <FormControlLabel
-                        control={
-                            <Switch checked={section.hasEval} size="small"
-                                onChange={(e) => onChange({ ...section, hasEval: e.target.checked })}
-                                sx={{
-                                    '& .Mui-checked .MuiSwitch-thumb': { background: TEAL },
-                                    '& .Mui-checked + .MuiSwitch-track': { background: `${TEAL} !important` }
-                                }} />
-                        }
-                        label={<Typography sx={{ fontSize: 13, fontWeight: 500, color: '#374151' }}>Incluir evaluación calificada</Typography>}
-                    />
-
-                    {section.hasEval && (
-                        <Box sx={{
-                            mt: 1.5, p: { xs: 1.5, sm: 2 }, background: TEAL_LIGHT,
-                            borderRadius: 2, border: `1px solid #b2ddd8`
-                        }}>
-                            <Grid container spacing={1.5}>
-                                <Grid item xs={12} sm={6}>
-                                    <TextField fullWidth size="small" label="Nombre de la evaluación"
-                                        value={section.eval.name} onChange={evalField('name')} sx={inputSx} />
-                                </Grid>
-                                <Grid item xs={6} sm={3}>
-                                    <TextField fullWidth size="small" label="Puntaje máx." type="number"
-                                        value={section.eval.maxScore} onChange={evalField('maxScore')} sx={inputSx} />
-                                </Grid>
-                                <Grid item xs={6} sm={3}>
-                                    <TextField fullWidth size="small" label="Mínimo aprobatorio" type="number"
-                                        value={section.eval.minScore} onChange={evalField('minScore')} sx={inputSx} />
-                                </Grid>
-                                <Grid item xs={12} sm={4}>
-                                    <FormControl fullWidth size="small">
-                                        <InputLabel>Intentos</InputLabel>
-                                        <Select value={section.eval.attempts} label="Intentos"
-                                            onChange={evalField('attempts')} sx={inputSx}>
-                                            {['1', '2', '3', 'Ilimitados'].map((v) => <MenuItem key={v} value={v}>{v}</MenuItem>)}
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-                                <Grid item xs={12} sm={8}>
-                                    <TextField fullWidth size="small" label="Instrucciones para el estudiante"
-                                        value={section.eval.instructions} onChange={evalField('instructions')}
-                                        multiline rows={2} sx={inputSx} />
-                                </Grid>
-                            </Grid>
-                        </Box>
-                    )}
-                </Box>
-            )}
-        </Box>
-    );
-}
+    uploadCourseCover,
+} from '../services/courseService';
+import {
+    TEAL_DARK, TEAL_MID, TEAL, TEAL_LIGHT,
+    cardSx, sectionTitleSx, inputSx, LEVELS,
+    makeSection, normalizeSections, buildSectionsPayload, buildInitialContent,
+} from '../components/CourseEditorHelpers';
+import { ProgressSidebar, SectionEditor, SideLabel } from '../components/CourseEditorParts';
+import { getStatusLabel } from '../components/courseUtils';
 
 
 // ─── Componente principal ─────────────────────────────────────────────────────
@@ -453,14 +48,13 @@ function TutorCourseEdit() {
                 { id: 1, type: 'video', label: 'Bienvenida al curso' },
                 { id: 2, type: 'pdf', label: 'Guía de instalación.pdf' },
             ],
-            hasEval: false,
-            eval: { name: '', maxScore: 100, minScore: 60, attempts: '1', instructions: '' },
         },
     ]);
     const [hasCover, setHasCover] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [status, setStatus] = useState('draft');
 
     useEffect(() => {
         const loadCourse = async () => {
@@ -476,6 +70,7 @@ function TutorCourseEdit() {
                     preview_video: course.preview_video || "",
                     language: course.language || "Español",
                 });
+                setStatus(course.status || 'draft'); 
 
                 const loadedSections = normalizeSections(course.sections || []);
                 if (loadedSections.length > 0) {
@@ -526,6 +121,50 @@ function TutorCourseEdit() {
         return '';
     };
 
+    const parseBackendError = (error) => {
+        let data = error.response?.data;
+
+        // Si no hay respuesta de red
+        if (!error.response) return 'Error de conexión con el servidor.';
+
+        // Si la respuesta vino como string (ej. JSON serializado o HTML)
+        if (typeof data === 'string') {
+            try {
+                data = JSON.parse(data);
+            } catch {
+                // Si el servidor respondió con 500 HTML por exceder caracteres o falla de BD
+                if (error.response.status === 500) {
+                    return 'El texto ingresado excede el límite permitido de caracteres o contiene información inválida.';
+                }
+                return 'Ocurrió un error en el servidor al procesar la solicitud.';
+            }
+        }
+
+        // Si Django REST Framework devolvió errores de validación de campos (Status 400)
+        if (typeof data === 'object' && data !== null) {
+            if (data.detail) return data.detail;
+            if (data.message) return data.message;
+
+            const firstKey = Object.keys(data)[0];
+            const firstVal = data[firstKey];
+
+            const fieldLabels = {
+                title: 'Título',
+                description: 'Descripción',
+                category: 'Categoría',
+                duration: 'Duración',
+                level: 'Nivel',
+                objectives: 'Objetivos',
+            };
+
+            const label = fieldLabels[firstKey] || firstKey;
+            const message = Array.isArray(firstVal) ? firstVal[0] : firstVal;
+
+            return `${label}: ${message}`;
+        }
+
+        return 'Ocurrió un error inesperado al guardar.';
+    };
 
     const handleSubmit = async (mode = 'draft') => {
         const statusToSend = mode === 'review' ? 'pending' : mode;
@@ -567,31 +206,17 @@ function TutorCourseEdit() {
                 setSections(normalizeSections(result.sections));
             }
 
-            setSuccess(mode === "draft" ? "Curso actualizado exitosamente." : "Curso actualizado correctamente");
+            setSuccess(
+                mode === 'draft'
+                    ? 'Curso guardado como borrador.'
+                    : 'Curso enviado a revisión correctamente.'
+            );
 
-            // 🔄 REDIRECCIÓN CONDICIONAL:
-            if (mode === 'review') {
-                // Si va a revisión, sí lo sacamos de la pantalla porque ya terminó por completo
-                setTimeout(() => {
-                    navigate("/tutor/courses");
-                }, 1500);
-            } else {
-                // Si es un guardado normal ('draft'), apagamos el estado de carga para que pueda seguir editando
-                setLoading(false);
-            }
+            navigate('/tutor/courses');
 
         } catch (e) {
             console.error(e);
-
-            if (e.response?.status === 403) {
-                setError("No tienes permiso para editar este curso");
-            } else if (e.response?.status === 404) {
-                setError("Curso no encontrado");
-            } else if (e.response?.data) {
-                setError(typeof e.response.data === "string" ? e.response.data : JSON.stringify(e.response.data));
-            } else {
-                setError("Error al actualizar el curso");
-            }
+            setError(parseBackendError(e));
         } finally {
             setLoading(false);
         }
@@ -660,7 +285,7 @@ function TutorCourseEdit() {
                                 sx={{ fontWeight: 800, color: '#ffffff', letterSpacing: '-0.5px', fontSize: { xs: '1.35rem', md: '1.6rem' } }}>
                                 Editar curso
                             </Typography>
-                            <Chip label="Borrador" size="small"
+                            <Chip label={getStatusLabel(status)} size="small"
                                 sx={{ background: '#fef3c7', color: '#92400e', fontWeight: 700, fontSize: 11, border: '1px solid #fcd34d' }} />
                         </Box>
 
@@ -676,13 +301,32 @@ function TutorCourseEdit() {
 
                     {/* Alertas */}
                     {error && (
-                        <Box sx={{
-                            background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 3,
-                            px: 2, py: 1.5, mb: 2.5, color: '#b91c1c', fontSize: 14
-                        }}>
+                        <Alert
+                            severity="error"
+                            variant="outlined"
+                            onClose={() => setError('')}
+                            sx={{
+                            mb: 3,
+                            borderRadius: '10px',
+                            backgroundColor: 'rgba(239, 68, 68, 0.06)', // Fondo rosado suave
+                            color: '#991b1b',                             // Texto rojo sobrio
+                            borderColor: 'rgba(239, 68, 68, 0.25)',     // Borde muy tenue
+                            fontSize: '0.875rem',
+                            fontWeight: 500,
+                            py: 0.5,                                      // Altura más compacta
+                            alignItems: 'center',
+                            '& .MuiAlert-icon': {
+                                color: '#dc2626',                           // Ícono rojizo en sintonía
+                                fontSize: '1.25rem',
+                            },
+                            '& .MuiAlert-action': {
+                                pt: 0,                                      // Alineación limpia del botón cerrar
+                            }
+                            }}
+                        >
                             {error}
-                        </Box>
-                    )}
+                        </Alert>
+                        )}
                     {success && (
                         <Box sx={{
                             background: TEAL_MID, borderRadius: 3, px: 2, py: 1.5, mb: 2.5,
@@ -706,10 +350,16 @@ function TutorCourseEdit() {
                                             Información básica
                                         </Typography>
 
-                                        <TextField fullWidth label="Título del curso *" size="small"
-                                            value={formData.title} onChange={field('title')}
+                                        <TextField 
+                                            fullWidth 
+                                            label="Título del curso *" 
+                                            size="small"
+                                            value={formData.title} 
+                                            onChange={field('title')}
                                             placeholder="Ej. Introducción a Python para principiantes"
-                                            sx={{ mb: 2, ...inputSx }} />
+                                            inputProps={{ maxLength: 200 }} // 👈 Limita el ingreso a 200 caracteres
+                                            sx={{ mb: 2, ...inputSx }} 
+                                        />
 
                                         <TextField fullWidth label="Descripción corta *" size="small" multiline rows={3}
                                             value={formData.description} onChange={field('description')}
@@ -785,7 +435,8 @@ function TutorCourseEdit() {
                                         {sections.map((s, i) => (
                                             <SectionEditor key={s.id} section={s} index={i}
                                                 onChange={(v) => update(s.id, v)}
-                                                onRemove={() => remove(s.id)} />
+                                                onRemove={() => remove(s.id)} 
+                                                showEvaluation={false}/>
                                         ))}
                                     </CardContent>
                                 </Card>
@@ -884,7 +535,7 @@ function TutorCourseEdit() {
                                         width: '100%'
                                     }}
                                 >
-                                    ⚠️ Recuerda guardar tus cambios antes de finalizar la edición.
+                                    Guarda el borrador antes de enviar el curso a revisión.
                                 </Typography>
                                 <Button fullWidth variant="contained" size="large"
                                     startIcon={loading ? <CircularProgress size={15} sx={{ color: '#fff' }} /> : <SaveIcon />}
@@ -896,7 +547,7 @@ function TutorCourseEdit() {
                                         '&:hover': { backgroundColor: TEAL_MID, boxShadow: '0 6px 18px rgba(15,118,110,0.38)' },
                                         '&.Mui-disabled': { background: '#e2e8f0', boxShadow: 'none' }
                                     }}>
-                                    Guardar cambios
+                                    Guardar borrador
                                 </Button>
 
                                 <Button fullWidth variant="outlined" size="large"
@@ -909,28 +560,6 @@ function TutorCourseEdit() {
                                     }}>
                                     Enviar a revisión
                                 </Button>
-
-                                {/* ✨ Botón Finalizar Edición formateado idéntico a los anteriores */}
-                                <Button fullWidth variant="outlined" size="large"
-                                    startIcon={<CheckCircleIcon />} 
-                                    onClick={() => {
-                                        // 1. Ejecuta el guardado normal (así asegura los cambios)
-                                        handleSubmit('draft'); 
-                                        
-                                        // 2. Obliga a redirigir inmediatamente después de un breve delay para que termine el proceso
-                                        setTimeout(() => {
-                                            navigate('/tutor/courses');
-                                        }, 1000); // 1 segundo es suficiente para que la petición viaje segura
-                                    }} 
-                                    disabled={loading}
-                                    sx={{
-                                        py: 1.4, borderRadius: 3, fontWeight: 600, textTransform: 'none', fontSize: 13,
-                                        borderColor: TEAL, color: TEAL,
-                                        '&:hover': { background: TEAL_LIGHT, borderColor: TEAL_MID }
-                                    }}>
-                                    Finalizar Edición
-                                </Button>
-
                             </Stack>
                         </Grid>
                     </Grid>

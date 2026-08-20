@@ -8,6 +8,7 @@ from .models import Category, Course, CourseSection, SectionContent, SectionEval
 class PublicCourseSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     tutor_username = serializers.CharField(source='tutor.username', read_only=True)
+    cover_image = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
@@ -19,25 +20,57 @@ class PublicCourseSerializer(serializers.ModelSerializer):
             'tutor_username',
             'level',
             'duration',
+            'cover_image',
             'created_at',
             'published_at',
         )
 
+    def get_cover_image(self, obj):
+        request = self.context.get('request')
+
+        if not obj.cover_image:
+            return None
+
+        if request:
+            return request.build_absolute_uri(obj.cover_image.url)
+
+        return obj.cover_image.url
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ['id', 'name', 'description']
 
-
 # ── Serializers de secciones (solo lectura, para el detalle de curso) ──────────
 
 class SectionContentSerializer(serializers.ModelSerializer):
     file_url = serializers.SerializerMethodField()
+    file_name = serializers.SerializerMethodField()
 
     class Meta:
         model = SectionContent
-        fields = ["id", "type", "label", "order", "file_url", "body"]
+        fields = [
+            "id",
+            "type",
+            "label",
+            "order",
+            "file_url",
+            "file_name",
+            "body",
+        ]
+
+    def get_file_url(self, obj):
+        request = self.context.get("request")
+        if not obj.file:
+            return None
+        if request:
+            return request.build_absolute_uri(obj.file.url)
+        return obj.file.url
+
+    def get_file_name(self, obj):
+        if not obj.file:
+            return None
+        return os.path.basename(obj.file.name)
 
     def get_file_url(self, obj):
         request = self.context.get("request")
@@ -294,6 +327,8 @@ class CourseEditSerializer(serializers.ModelSerializer):
             "status",
             "created_at",
             "updated_at",
+            "cover_image",
+            "sections",
             "sections_meta",
         ]
         read_only_fields = [
@@ -402,83 +437,22 @@ class CourseEditSerializer(serializers.ModelSerializer):
 
         if hasattr(section, "evaluation"):
             section.evaluation.delete()
-            sections_data = validated_data.pop("sections_meta", None)
+        
 
-            for attr, value in validated_data.items():
-                setattr(instance, attr, value)
-            instance.save()
+class AdminCourseEditSerializer(CourseEditSerializer):
+    """
+    Serializer para edición de cursos por el administrador.
 
-            if sections_data is not None:
-                kept_section_ids = []
+    Hereda toda la lógica de edición del tutor (actualización de curso,
+    secciones, contenidos y evaluaciones), pero el admin puede editar
+    cursos en cualquier estado — a diferencia del tutor, que solo puede
+    editar 'borrador' o 'rechazado'.
+    """
 
-                for order, section_data in enumerate(sections_data):
-                    contents_data = section_data.pop("contents", [])
-                    evaluation_data = section_data.pop("evaluation", None)
-                    section_id = section_data.pop("id", None)
+    class Meta(CourseEditSerializer.Meta):
+        fields = CourseEditSerializer.Meta.fields + ["rejection_reason", "is_active"]
+        read_only_fields = ["id", "created_at", "updated_at"]
 
-                    if section_id:
-                        section = instance.sections.filter(id=section_id).first()
-                        if section:
-                            section.name = section_data["name"]
-                            section.order = order
-                            section.save(update_fields=["name", "order"])
-                        else:
-                            section = CourseSection.objects.create(
-                                course=instance,
-                                name=section_data["name"],
-                                order=order,
-                            )
-                    else:
-                        section = CourseSection.objects.create(
-                            course=instance,
-                            name=section_data["name"],
-                            order=order,
-                        )
-
-                    kept_section_ids.append(section.id)
-                    kept_content_ids = []
-
-                    for content_order, content_data in enumerate(contents_data):
-                        content_id = content_data.get("id")
-                        if content_id:
-                            content = section.contents.filter(id=content_id).first()
-                            if content:
-                                content.type = content_data["type"]
-                                content.label = content_data["label"]
-                                content.body = content_data.get("body", "")
-                                content.order = content_order
-                                content.save(update_fields=["type", "label", "body", "order"])
-                            else:
-                                content = SectionContent.objects.create(
-                                    section=section,
-                                    type=content_data["type"],
-                                    label=content_data["label"],
-                                    body=content_data.get("body", ""),
-                                    order=content_order,
-                                )
-                        else:
-                            content = SectionContent.objects.create(
-                                section=section,
-                                type=content_data["type"],
-                                label=content_data["label"],
-                                body=content_data.get("body", ""),
-                                order=content_order,
-                            )
-
-                        kept_content_ids.append(content.id)
-
-                    section.contents.exclude(id__in=kept_content_ids).delete()
-
-                    if evaluation_data:
-                        SectionEvaluation.objects.update_or_create(
-                            section=section,
-                            defaults=evaluation_data,
-                        )
-                    elif hasattr(section, "evaluation"):
-                        section.evaluation.delete()
-
-                instance.sections.exclude(id__in=kept_section_ids).delete()
-
-            return instance
-
-
+    def validate(self, attrs):
+        
+        return attrs

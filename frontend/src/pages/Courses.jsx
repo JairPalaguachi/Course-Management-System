@@ -6,7 +6,6 @@ import {
     Chip,
     Container,
     Divider,
-    Grid,
     Pagination,
     Paper,
     Stack,
@@ -35,10 +34,33 @@ const LEVEL_OPTIONS = [
 ];
 
 const DURATION_OPTIONS = [
-    { key: "all", label: "Cualquier duración", params: {} },
-    { key: "short", label: "Hasta 4 horas", params: { max_duration: 240 } },
-    { key: "medium", label: "4 a 8 horas", params: { min_duration: 240, max_duration: 480 } },
-    { key: "long", label: "Más de 8 horas", params: { min_duration: 480 } },
+    {
+        key: "all",
+        label: "Cualquier duración",
+        params: {},
+    },
+    {
+        key: "short",
+        label: "Menos de 4 horas",
+        params: {
+            max_duration: 4,
+        },
+    },
+    {
+        key: "medium",
+        label: "4 a 8 horas",
+        params: {
+            min_duration: 5,
+            max_duration: 8,
+        },
+    },
+    {
+        key: "long",
+        label: "Más de 8 horas",
+        params: {
+            min_duration: 9,
+        },
+    },
 ];
 
 function Courses() {
@@ -95,7 +117,7 @@ function Courses() {
 
                 setError(
                     requestError?.response?.data?.detail ||
-                        "No pudimos cargar el catálogo de cursos. Intenta nuevamente en unos segundos.",
+                    "No pudimos cargar el catálogo de cursos. Intenta nuevamente en unos segundos.",
                 );
                 setCourses([]);
                 setTotalCount(0);
@@ -188,13 +210,27 @@ function Courses() {
     } else {
         catalogContent = (
             <>
-                <Grid container spacing={3} sx={{ mb: 4 }}>
+                <Box
+                    sx={{
+                        display: "grid",
+                        gridTemplateColumns: {
+                            xs: "1fr",
+                            sm: "repeat(2, minmax(0, 1fr))",
+                            md: "repeat(3, minmax(0, 1fr))",
+                            lg: "repeat(4, minmax(0, 1fr))",
+                        },
+                        gap: 3,
+                        mb: 4,
+                    }}
+                >
                     {courses.map((course) => (
-                        <Grid xs={12} md={6} lg={4} key={course.id}>
-                            <CourseCard course={course} onClick={() => handleOpenCourse(course)} />
-                        </Grid>
+                        <CourseCard
+                            key={course.id}
+                            course={course}
+                            onClick={() => handleOpenCourse(course)}
+                        />
                     ))}
-                </Grid>
+                </Box>
 
                 {totalPages > 1 ? (
                     <Stack alignItems="center" sx={{ mb: 2 }}>
@@ -244,7 +280,7 @@ function Courses() {
                     >
                         <Box>
                             <Chip
-                                icon={<VerifiedIcon />}
+                                icon={<VerifiedIcon style={{ color: "#10b030" }} />}
                                 label="Catálogo público"
                                 sx={{
                                     mb: 2,
@@ -257,8 +293,7 @@ function Courses() {
                                 Explora cursos listos para aprender hoy.
                             </Typography>
                             <Typography sx={{ color: "rgba(255,255,255,0.8)", maxWidth: 720, lineHeight: 1.7 }}>
-                                Revisa cursos publicados, filtra por nivel o duración y encuentra el punto de partida
-                                adecuado sin iniciar sesión.
+                                Revisa cursos publicados, filtra por nivel o duración y encuentra el curso adecuado sin necesidad deiniciar sesión.
                             </Typography>
                             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mt: 3 }}>
                                 <Button
@@ -307,7 +342,7 @@ function Courses() {
                         >
                             <Stack spacing={2.5}>
                                 <Box>
-                                    <Typography variant="overline" sx={{ color: "rgba(255,255,255,0.72)" }}>
+                                    <Typography variant="overline" sx={{ color: "rgba(255,255,255,255)", fontWeight: 700 }}>
                                         Cursos visibles
                                     </Typography>
                                     <Typography variant="h4" sx={{ fontWeight: 800 }}>
@@ -329,7 +364,7 @@ function Courses() {
                                         <AutoStoriesIcon />
                                     </Box>
                                     <Box>
-                                        <Typography sx={{ fontWeight: 700 }}>Catálogo público</Typography>
+                                        <Typography sx={{ fontWeight: 700, color: "rgba(255,255,255,255)" }}>Catálogo público</Typography>
                                         <Typography sx={{ color: "rgba(255,255,255,0.72)", fontSize: "0.92rem" }}>
                                             Cursos publicados y listos para consultar.
                                         </Typography>
@@ -350,7 +385,7 @@ function Courses() {
                                         <TrendingUpIcon />
                                     </Box>
                                     <Box>
-                                        <Typography sx={{ fontWeight: 700 }}>Filtros rápidos</Typography>
+                                        <Typography sx={{ fontWeight: 700, color: "rgba(255,255,255,255)" }}>Filtros rápidos</Typography>
                                         <Typography sx={{ color: "rgba(255,255,255,0.72)", fontSize: "0.92rem" }}>
                                             Busca por nivel, texto o duración.
                                         </Typography>
@@ -360,8 +395,19 @@ function Courses() {
                         </Paper>
                     </Box>
                 </Paper>
-
+                <Box
+                    sx={{
+                        width: "100%",
+                        height: "auto",
+                        mb: 3,
+                    }}>
+                    <Typography sx={{ color: "#64748b" }}>
+                        Filtra por nombre , duración y nivel para encontrar cursos listos para publicar o explorar.
+                    </Typography>
+                </Box>
                 <Paper
+
+
                     elevation={0}
                     sx={{
                         borderRadius: 4,
@@ -424,22 +470,23 @@ function Courses() {
 
                 <Divider sx={{ my: 4, borderColor: "rgba(15,118,110,0.14)" }} />
                 <Stack
-                    direction={{ xs: "column", md: "row" }}
+                    direction="column"
                     spacing={2}
-                    justifyContent="space-between"
-                    alignItems={{ xs: "flex-start", md: "center" }}
+                    justifyContent="center"
+                    alignItems="center"
                 >
-                    <Typography sx={{ color: "#64748b" }}>
-                        Filtra por tema, duración y nivel para encontrar cursos listos para publicar o explorar.
-                    </Typography>
+
                     <Button
                         variant="contained"
-                        startIcon={<VerifiedIcon />}
+                        startIcon={<VerifiedIcon style={{ color: "#10bf33" }} />}
                         onClick={() => navigate("/register")}
                         sx={{
                             backgroundColor: "#0f766e",
                             textTransform: "none",
                             fontWeight: 700,
+                            "& .MuiButton-startIcon": {
+                                color: "#d9d9e1",
+                            },
                             "&:hover": { backgroundColor: "#115e59" },
                         }}
                     >

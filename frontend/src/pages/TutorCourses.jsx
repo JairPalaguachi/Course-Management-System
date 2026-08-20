@@ -62,6 +62,13 @@ function TutorCourses() {
                     color: "#166534",
                     label: "Aprobado",
                 };
+            
+            case "rejected":
+                return { 
+                    bg: "#fee2e2", 
+                    color: "#991b1b",
+                    label: "Rechazado",
+                };
 
             default:
                 return {

@@ -1,77 +1,145 @@
 import PropTypes from "prop-types";
-import { Box, Card, CardContent, Chip, Stack, Typography } from "@mui/material";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import SchoolIcon from "@mui/icons-material/School";
-import VerifiedIcon from "@mui/icons-material/Verified";
-import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import { formatDate, formatDuration, getLevelLabel } from "./courseUtils";
-import CourseMetaItem from "./CourseMetaItem";
+import { Box, Card, CardContent, Chip, Button, Typography } from "@mui/material";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import { getLevelLabel } from "./courseUtils";
 
 function CourseCard({ course, onClick }) {
     return (
         <Card
-            variant="outlined"
-            onClick={onClick}
             sx={{
-                height: "100%",
                 borderRadius: 4,
-                borderColor: "rgba(15,118,110,0.16)",
-                background: "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(247,252,251,0.98) 100%)",
-                boxShadow: "0 12px 40px rgba(15,118,110,0.08)",
-                cursor: onClick ? "pointer" : "default",
-                transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                "&:hover": onClick
-                    ? {
-                          boxShadow: "0 16px 48px rgba(15,118,110,0.14)",
-                          transform: "translateY(-3px)",
-                      }
-                    : {},
+                overflow: "hidden",
+                height: "430",
+                display: "flex",
+                flexDirection: "column",
+                maxWidth: 260,
+                width: "100%",
+                margin: "0 auto",
+                border: "1px solid #e2e8f0",
+                transition: "all 0.25s ease",
+
+                "&:hover": {
+                    transform: "translateY(-6px)",
+                    boxShadow: "0 16px 40px rgba(15,118,110,0.15)",
+                },
             }}
         >
-            <CardContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2 }}>
-                <Stack direction="row" justifyContent="space-between" spacing={2}>
-                    <Chip
-                        label={course.category_name || "Sin categoría"}
-                        size="small"
+            {/* Imagen */}
+            <Box
+                sx={{
+                    height: 150,
+                    width: "100%",
+                    overflow: "hidden",
+                    background: course.cover_image
+                        ? "#f8fafc"
+                        : "linear-gradient(145deg, #0a2e2b, #0f766e)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    p: 1.5,
+                }}
+            >
+                {course.cover_image && (
+                    <Box
+                        component="img"
+                        src={course.cover_image}
+                        alt={course.title || "Portada del curso"}
                         sx={{
-                            backgroundColor: "rgba(15,118,110,0.12)",
-                            color: "#0f766e",
-                            fontWeight: 700,
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "contain",
+                            objectPosition: "center",
+                            display: "block",
+                            borderRadius: 2,
+                            backgroundColor: "#f8fafc",
                         }}
                     />
-                    <Chip
-                        icon={<AccessTimeIcon />}
-                        label={formatDuration(course.duration_minutes)}
-                        size="small"
-                        variant="outlined"
-                        sx={{ fontWeight: 600 }}
-                    />
-                </Stack>
+                )}
+            </Box>
 
-                <Box>
-                    <Typography variant="h6" sx={{ fontWeight: 800, color: "#0f172a", mb: 1 }}>
-                        {course.title}
-                    </Typography>
-                    <Typography sx={{ color: "#475569", lineHeight: 1.7 }}>{course.description}</Typography>
-                </Box>
+            {/* Contenido */}
+            <CardContent
+                sx={{
+                    flexGrow: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    p: 2.5,
+                }}
+            >
+                {/* Nivel */}
+                <Chip
+                    label={getLevelLabel(course.level)}
+                    size="small"
+                    sx={{
+                        backgroundColor: "#f1f5f9",
+                        color: "#475569",
+                        fontWeight: 600,
+                        mb: 1.5,
+                        alignSelf: "flex-start",
+                        fontSize: "0.75rem",
+                    }}
+                />
 
-                <Stack spacing={1.25} sx={{ mt: "auto" }}>
-                    <CourseMetaItem
-                        icon={<SchoolIcon sx={{ fontSize: 18, color: "#0f766e" }} />}
-                    >
-                        Tutor: {course.tutor_username || "Equipo académico"}
-                    </CourseMetaItem>
-                    <CourseMetaItem
-                        icon={<TrendingUpIcon sx={{ fontSize: 18, color: "#0f766e" }} />}
-                    >
-                        Nivel: {getLevelLabel(course.level)}
-                    </CourseMetaItem>
-                    <CourseMetaItem
-                        icon={<VerifiedIcon sx={{ fontSize: 18, color: "#0f766e" }} />}
-                    >
-                        Publicado: {formatDate(course.published_at || course.created_at)}
-                    </CourseMetaItem>
-                </Stack>
+                {/* Título */}
+                <Typography
+                    variant="h6"
+                    sx={{
+                        fontWeight: 700,
+                        color: "#0a2e2b",
+                        mb: 0.75,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        minHeight: 52,
+                        fontSize: "0.95rem",
+                    }}
+                >
+                    {course.title}
+                </Typography>
+
+                {/* Descripción */}
+                <Typography
+                    sx={{
+                        color: "#64748b",
+                        fontSize: "0.82rem",
+                        mb: 1.5,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                        minHeight: 38,
+                    }}
+                >
+                    {course.description || "Sin descripción disponible."}
+                </Typography>
+
+                {/* Único botón público */}
+                <Button
+                    fullWidth
+                    variant="outlined"
+                    startIcon={<VisibilityIcon />}
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        onClick?.();
+                    }}
+                    sx={{
+                        mt: "auto",
+                        borderColor: "#0f766e",
+                        color: "#0f766e",
+                        textTransform: "none",
+                        fontWeight: 600,
+                        borderRadius: 3,
+
+                        "&:hover": {
+                            backgroundColor: "rgba(15,118,110,0.06)",
+                            borderColor: "#0f766e",
+                        },
+                    }}
+                >
+                    Ver más
+                </Button>
             </CardContent>
         </Card>
     );
@@ -79,15 +147,12 @@ function CourseCard({ course, onClick }) {
 
 CourseCard.propTypes = {
     course: PropTypes.shape({
-        category_name: PropTypes.string,
-        created_at: PropTypes.string,
+        cover_image: PropTypes.string,
         description: PropTypes.string,
-        duration_minutes: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
         level: PropTypes.string,
-        published_at: PropTypes.string,
         title: PropTypes.string.isRequired,
-        tutor_username: PropTypes.string,
     }).isRequired,
+
     onClick: PropTypes.func,
 };
 

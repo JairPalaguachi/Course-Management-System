@@ -153,7 +153,7 @@ function Home() {
                             justifyContent: "center",
                             alignItems: "center",
                             width: "100%",
-                            maxWidth: "480px",
+                            maxWidth: "720px",
                             mx: "auto",
                         }}
                     >

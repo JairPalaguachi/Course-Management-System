@@ -15,7 +15,6 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
-    Grid,
     Pagination,
     Stack,
     Typography,
@@ -34,6 +33,8 @@ import SearchBar from "../components/SearchBar";
 import BasicFilters from "../components/BasicFilters";
 import CourseDetailDialog from "../components/CourseDetailDialog";
 import api from "../services/api";
+import { getStudentEnrollments } from "../services/enrollmentService";
+import { enrollInCourse } from "../services/courseService";
 
 // ── Paleta (igual que AdminDashboard / TutorDashboard) ────────────────────────
 const TEAL_DARK = "#0a2e2b";
@@ -41,11 +42,25 @@ const TEAL_MID = "#10423f";
 const TEAL = "#0f766e";
 const TEAL_LIGHT = "#f0faf8";
 
+const getMediaUrl = (url) => {
+    if (!url) return "";
+
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+        return url;
+    }
+
+    const apiUrl =
+        import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
+
+    const backendUrl = apiUrl.replace(/\/api\/?$/, "");
+
+    return `${backendUrl}${url.startsWith("/") ? url : `/${url}`}`;
+};
 // ── Opciones de filtros (mismo esquema que Courses.jsx) ───────────────────────
 const PAGE_SIZE = 9;
 
 const LEVEL_OPTIONS = [
-    { value: "", label: "Todos los niveles" },
+    { value: "all", label: "Todos los niveles" },
     { value: "beginner", label: "Principiante" },
     { value: "intermediate", label: "Intermedio" },
     { value: "advanced", label: "Avanzado" },
@@ -53,9 +68,17 @@ const LEVEL_OPTIONS = [
 
 const DURATION_OPTIONS = [
     { key: "all", label: "Cualquier duración", params: {} },
-    { key: "short", label: "Hasta 4 horas", params: { max_duration: 240 } },
-    { key: "medium", label: "4 a 8 horas", params: { min_duration: 240, max_duration: 480 } },
-    { key: "long", label: "Más de 8 horas", params: { min_duration: 480 } },
+    { key: "short", label: "Hasta 4 horas", params: { max_duration: 4 } },
+    {
+        key: "medium",
+        label: "5 a 8 horas",
+        params: { min_duration: 5, max_duration: 8 },
+    },
+    {
+        key: "long",
+        label: "Más de 8 horas",
+        params: { min_duration: 9 },
+    },
 ];
 
 const LEVEL_LABELS = {
@@ -64,44 +87,7 @@ const LEVEL_LABELS = {
     advanced: "Avanzado",
 };
 
-const QUICK_LINKS = ["Mis cursos", "Catálogo", "Progreso", "Certificados", "Perfil"];
-
-// ── Inscripciones de ejemplo (reemplazar con API real cuando esté lista) ──────
-const MOCK_ENROLLMENTS = [
-    {
-        id: 1,
-        progress: 72,
-        course: {
-            id: 1,
-            title: "Introducción a Python para Ciencias de Datos",
-            description: "Aprende los fundamentos de Python con enfoque en análisis de datos y visualización.",
-            tutor_name: "Carlos Menéndez",
-            cover_image: null,
-        },
-    },
-    {
-        id: 2,
-        progress: 100,
-        course: {
-            id: 2,
-            title: "Diseño UX/UI con Figma",
-            description: "Crea interfaces modernas y accesibles usando las mejores herramientas del mercado.",
-            tutor_name: "María Vásquez",
-            cover_image: null,
-        },
-    },
-    {
-        id: 3,
-        progress: 20,
-        course: {
-            id: 3,
-            title: "Redes y Seguridad Informática",
-            description: "Fundamentos de redes TCP/IP, protocolos de seguridad y buenas prácticas.",
-            tutor_name: "Andrés Quiñónez",
-            cover_image: null,
-        },
-    },
-];
+const QUICK_LINKS = ["Mis cursos", "Catálogo"];
 
 const CourseShape = PropTypes.shape({
     id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
@@ -133,9 +119,13 @@ function EnrolledCourseCard({ enrollment, onGoToCourse }) {
             sx={{
                 borderRadius: 4,
                 overflow: "hidden",
+                width: "100%",
+                minWidth: "260px",
                 height: "100%",
+                minHeight: "440px",
                 display: "flex",
                 flexDirection: "column",
+                margin: "0 auto",
                 border: "1px solid #e2e8f0",
                 transition: "all 0.25s ease",
                 "&:hover": {
@@ -144,24 +134,26 @@ function EnrolledCourseCard({ enrollment, onGoToCourse }) {
                 },
             }}
         >
-            {/* Imagen / placeholder */}
-            <Box
-                sx={{
-                    height: 140,
-                    backgroundImage: course.cover_image
-                        ? `url(${course.cover_image})`
-                        : `linear-gradient(145deg, ${TEAL_DARK}, ${TEAL})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    position: "relative",
-                }}
-            >
-                {!course.cover_image && <SchoolIcon sx={{ fontSize: 52, color: "#fff", opacity: 0.85 }} />}
+            <Box sx={{ height: 150, width: "100%", overflow: "hidden", position: "relative", background: course.cover_image ? "#f8fafc" : `linear-gradient(145deg, ${TEAL_DARK}, ${TEAL})`, display: "flex", alignItems: "center", justifyContent: "center", p: 1.5 }}>
+                {course.cover_image ? (
+                    <Box
+                        component="img"
+                        src={getMediaUrl(course.cover_image)}
+                        alt={course.title || "Portada del curso"}
+                        sx={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "contain",
+                            objectPosition: "center",
+                            display: "block",
+                            borderRadius: 2,
+                            backgroundColor: "#f8fafc",
+                        }}
+                    />
+                ) : (
+                    <SchoolIcon sx={{ fontSize: 52, color: "#fff", opacity: 0.85 }} />
+                )}
 
-                {/* Barra de progreso sobre la imagen */}
                 <Box
                     sx={{
                         position: "absolute",
@@ -270,7 +262,8 @@ function CatalogCourseCard({ course, isEnrolled, onEnroll, onViewDetail }) {
             sx={{
                 borderRadius: 4,
                 overflow: "hidden",
-                height: "100%",
+                width: "100%",
+                height: "100%", // Forzar altura total de la fila
                 display: "flex",
                 flexDirection: "column",
                 border: "1px solid #e2e8f0",
@@ -281,20 +274,25 @@ function CatalogCourseCard({ course, isEnrolled, onEnroll, onViewDetail }) {
                 },
             }}
         >
-            <Box
-                sx={{
-                    height: 140,
-                    backgroundImage: course.cover_image
-                        ? `url(${course.cover_image})`
-                        : `linear-gradient(145deg, ${TEAL_DARK}, ${TEAL})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                }}
-            >
-                {!course.cover_image && <AutoStoriesIcon sx={{ fontSize: 52, color: "#fff", opacity: 0.85 }} />}
+            <Box sx={{ height: 150, width: "100%", overflow: "hidden", background: course.cover_image ? "#f8fafc" : `linear-gradient(145deg, ${TEAL_DARK}, ${TEAL})`, display: "flex", alignItems: "center", justifyContent: "center", p: 1.5 }}>
+                {course.cover_image ? (
+                    <Box
+                        component="img"
+                        src={course.cover_image}
+                        alt={course.title || "Portada del curso"}
+                        sx={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "contain",
+                            objectPosition: "center",
+                            display: "block",
+                            borderRadius: 2,
+                            backgroundColor: "#f8fafc",
+                        }}
+                    />
+                ) : (
+                    <AutoStoriesIcon sx={{ fontSize: 52, color: "#fff", opacity: 0.85 }} />
+                )}
             </Box>
 
             <CardContent sx={{ flexGrow: 1, display: "flex", flexDirection: "column", p: 2.5 }}>
@@ -346,11 +344,21 @@ function CatalogCourseCard({ course, isEnrolled, onEnroll, onViewDetail }) {
                     {course.description || "Sin descripción disponible."}
                 </Typography>
 
-                {course.tutor_name && (
-                    <Typography sx={{ fontSize: "0.78rem", color: "#94a3b8", mb: 2 }}>
-                        Tutor: <strong style={{ color: "#475569" }}>{course.tutor_name}</strong>
-                    </Typography>
-                )}
+                <Box sx={{ minHeight: 32, mb: 1 }}>
+                    {course.tutor_name && (
+                        <Typography
+                            sx={{
+                                fontSize: "0.78rem",
+                                color: "#94a3b8",
+                            }}
+                        >
+                            Tutor:{" "}
+                            <strong style={{ color: "#475569" }}>
+                                {course.tutor_name}
+                            </strong>
+                        </Typography>
+                    )}
+                </Box>
 
                 <Stack spacing={1} sx={{ mt: "auto" }}>
                     {isEnrolled ? (
@@ -424,10 +432,10 @@ function StudentDashboard() {
     const { logout, user } = useAuth();
     const navigate = useNavigate();
 
-    // ── Estado: cursos inscritos (mock — reemplazar con llamada a API real) ──
-    const [enrollments, setEnrollments] = useState(MOCK_ENROLLMENTS);
-    const loadingEnrollments = false;
-    const enrollmentsError = "";
+// ── Estado: cursos inscritos ──────────────────────────────────────────────
+    const [enrollments, setEnrollments] = useState([]);
+    const [loadingEnrollments, setLoadingEnrollments] = useState(true);
+    const [enrollmentsError, setEnrollmentsError] = useState("");
     // ── IDs de cursos ya inscritos ───────────────────────────────────────────
     const enrolledIds = useMemo(
         () => new Set(enrollments.map((enrollment) => enrollment.course?.id ?? enrollment.id)),
@@ -437,7 +445,7 @@ function StudentDashboard() {
     // ── Estado: catálogo ─────────────────────────────────────────────────────
     const [catalogCourses, setCatalogCourses] = useState([]);
     const [search, setSearch] = useState("");
-    const [level, setLevel] = useState("");
+    const [level, setLevel] = useState("all");
     const [durationKey, setDurationKey] = useState("all");
     const [page, setPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
@@ -468,6 +476,44 @@ function StudentDashboard() {
         navigate("/login");
     };
 
+// ── Carga de inscripciones reales del estudiante ─────────────────────────
+useEffect(() => {
+    let isActive = true;
+
+    const loadEnrollments = async () => {
+        setLoadingEnrollments(true);
+        setEnrollmentsError("");
+
+        try {
+            const data = await getStudentEnrollments();
+
+            if (!isActive) return;
+
+            setEnrollments(Array.isArray(data) ? data : []);
+        } catch (error) {
+            if (!isActive) return;
+
+            console.error("Error al cargar las inscripciones:", error);
+
+            setEnrollmentsError(
+                "No pudimos cargar tus cursos inscritos. Intenta nuevamente."
+            );
+
+            setEnrollments([]);
+        } finally {
+            if (isActive) {
+                setLoadingEnrollments(false);
+            }
+        }
+    };
+
+    loadEnrollments();
+
+    return () => {
+        isActive = false;
+    };
+}, []);
+
     // ── Carga del catálogo ───────────────────────────────────────────────────
     useEffect(() => {
         let isActive = true;
@@ -478,7 +524,9 @@ function StudentDashboard() {
                 DURATION_OPTIONS.find((o) => o.key === durationKey)?.params ?? {};
             const params = { page, page_size: PAGE_SIZE, ...durationFilters };
             if (search.trim()) params.search = search.trim();
-            if (level) params.level = level;
+            if (level && level !== "all") {
+                params.level = level;
+            }
 
             try {
                 const response = await api.get("/courses/public/", { params });
@@ -506,21 +554,37 @@ function StudentDashboard() {
     // ── Confirmar inscripción (mock — reemplazar con POST /enrollments/) ─────
     const handleConfirmEnroll = async () => {
         if (!enrollingCourse) return;
+
         setEnrollLoading(true);
         setEnrollError("");
-        // Simular pequeño delay de red
-        await new Promise((res) => setTimeout(res, 600));
-        setEnrollments((prev) => [
-            ...prev,
-            {
-                id: Date.now(),
-                progress: 0,
-                course: enrollingCourse,
-            },
-        ]);
-        setEnrollSuccess(`Inscrito a "${enrollingCourse.title}" exitosamente.`);
-        setEnrollingCourse(null);
-        setEnrollLoading(false);
+
+        try {
+            const response = await enrollInCourse(enrollingCourse.id);
+
+            console.log("Respuesta de inscripción:", response);
+
+            const updatedEnrollments = await getStudentEnrollments();
+            
+            setEnrollments(
+                Array.isArray(updatedEnrollments) ? updatedEnrollments : []);
+
+            setEnrollSuccess(
+                `Inscrito a "${enrollingCourse.title}" exitosamente.`
+            );
+
+            setEnrollingCourse(null);
+        } catch (error) {
+            console.error("Error al inscribirse:", error);
+
+            const message =
+                error.response?.data?.error ||
+                error.response?.data?.detail ||
+                "No se pudo realizar la inscripción.";
+
+            setEnrollError(message);
+        } finally {
+            setEnrollLoading(false);
+        }
     };
 
     const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
@@ -647,7 +711,13 @@ function StudentDashboard() {
                     <Stack
                         direction={{ xs: "column", sm: "row" }}
                         spacing={2}
-                        sx={{ justifyContent: "center", alignItems: "center", maxWidth: 500, mx: "auto" }}
+                        sx={{
+                            justifyContent: "center",
+                            alignItems: "stretch",
+                            width: "100%",
+                            maxWidth: 720,
+                            mx: "auto",
+                        }}
                     >
                         <Button
                             variant="contained"
@@ -658,7 +728,10 @@ function StudentDashboard() {
                                     ?.scrollIntoView({ behavior: "smooth" });
                             }}
                             sx={{
-                                px: 4, py: 1.6,
+                                flex: 1,
+                                minWidth: 0,
+                                px: 4,
+                                py: 1.6,
                                 borderRadius: 3,
                                 fontSize: "1rem",
                                 fontWeight: 700,
@@ -670,10 +743,36 @@ function StudentDashboard() {
                                     boxShadow: "0 6px 28px rgba(245,158,11,0.45)",
                                 },
                                 textTransform: "none",
-                                minWidth: 220,
+                                width: "100%",
                             }}
                         >
                             Mis Cursos
+                        </Button>
+
+                        <Button
+                            variant="outlined"
+                            size="large"
+                            startIcon={<MenuBookIcon />}
+                            onClick={() => navigate("/student/history")}
+                            sx={{
+                                flex: 1,
+                                minWidth: 0,
+                                px: 4,
+                                py: 1.6,
+                                borderRadius: 3,
+                                fontSize: "1rem",
+                                fontWeight: 600,
+                                color: "#ffffff",
+                                borderColor: "rgba(255,255,255,0.45)",
+                                "&:hover": {
+                                    borderColor: "#ffffff",
+                                    backgroundColor: "rgba(255,255,255,0.08)",
+                                },
+                                textTransform: "none",
+                                width: "100%",
+                            }}
+                        >
+                            Ver Historial
                         </Button>
 
                         <Button
@@ -685,7 +784,10 @@ function StudentDashboard() {
                                     ?.scrollIntoView({ behavior: "smooth" });
                             }}
                             sx={{
-                                px: 4, py: 1.6,
+                                flex: 1,
+                                minWidth: 0,
+                                px: 4,
+                                py: 1.6,
                                 borderRadius: 3,
                                 fontSize: "1rem",
                                 fontWeight: 600,
@@ -696,7 +798,7 @@ function StudentDashboard() {
                                     backgroundColor: "rgba(255,255,255,0.08)",
                                 },
                                 textTransform: "none",
-                                minWidth: 220,
+                                width: "100%",
                             }}
                         >
                             Explorar Catálogo
@@ -719,6 +821,17 @@ function StudentDashboard() {
                                         backgroundColor: "rgba(255,255,255,0.18)",
                                         cursor: "pointer",
                                     },
+                                }}
+                                onClick={() => {
+                                    if (label === "Mis cursos") {
+                                        document.getElementById("enrolled-courses-section")
+                                            ?.scrollIntoView({ behavior: "smooth" });
+                                        return;
+                                    }
+                                    if (label === "Catálogo") {
+                                        document.getElementById("catalog-section")
+                                            ?.scrollIntoView({ behavior: "smooth" });
+                                    }
                                 }}
                             />
                         ))}
@@ -750,11 +863,6 @@ function StudentDashboard() {
                             icon: <TrendingUpIcon sx={{ fontSize: 32, color: TEAL }} />,
                             title: "Progreso Continuo",
                             desc: "Cada sección completada te acerca más a dominar el tema.",
-                        },
-                        {
-                            icon: <EmojiEventsIcon sx={{ fontSize: 32, color: TEAL }} />,
-                            title: "Certificaciones",
-                            desc: "Al completar un curso obtienes un certificado de logro.",
                         },
                     ].map(({ icon, title, desc }) => (
                         <Box
@@ -891,7 +999,12 @@ function StudentDashboard() {
                                         key={id}
                                         enrollment={enrollment}
                                         onGoToCourse={(courseId) =>
-                                            navigate(`/student/courses/${courseId}`)
+                                            navigate(`/student/courses/${courseId}`, {
+                                                state: {
+                                                    enrollment,
+                                                    from: "/student/dashboard",
+                                                },
+                                            })
                                         }
                                     />
                                 );
@@ -963,7 +1076,10 @@ function StudentDashboard() {
                                 onLevelChange={(v) => { setLevel(v); setPage(1); }}
                                 onDurationChange={(v) => { setDurationKey(v); setPage(1); }}
                                 onReset={() => {
-                                    setSearch(""); setLevel(""); setDurationKey("all"); setPage(1);
+                                    setSearch("");
+                                    setLevel("all");
+                                    setDurationKey("all");
+                                    setPage(1);
                                 }}
                             />
                             <Typography sx={{ color: "#64748b", fontSize: "0.9rem" }}>
@@ -1000,18 +1116,31 @@ function StudentDashboard() {
                         </Box>
                     ) : (
                         <>
-                            <Grid container spacing={4} sx={{ mb: 4 }}>
+                            {/* Contenido del catálogo con CSS Grid */}
+                            <Box
+                                sx={{
+                                    display: "grid",
+                                    gridTemplateColumns: {
+                                        xs: "1fr",                  // 1 columna en móviles
+                                        sm: "repeat(2, 1fr)",        // 2 columnas en pantallas pequeñas
+                                        md: "repeat(3, 1fr)",        // 3 columnas en medianas
+                                        lg: "repeat(4, 1fr)",        // 4 columnas en grandes
+                                    },
+                                    gap: 3,                          // Espaciado uniforme entre tarjetas
+                                    mb: 4,
+                                    alignItems: "stretch",           // Iguala la altura de todas las tarjetas
+                                }}
+                            >
                                 {catalogCourses.map((course) => (
-                                    <Grid xs={12} sm={6} md={4} lg={3} key={course.id}>
-                                        <CatalogCourseCard
-                                            course={course}
-                                            isEnrolled={enrolledIds.has(course.id)}
-                                            onEnroll={setEnrollingCourse}
-                                            onViewDetail={setSelectedCourse}
-                                        />
-                                    </Grid>
+                                    <CatalogCourseCard
+                                        key={course.id}
+                                        course={course}
+                                        isEnrolled={enrolledIds.has(course.id)}
+                                        onEnroll={setEnrollingCourse}
+                                        onViewDetail={setSelectedCourse}
+                                    />
                                 ))}
-                            </Grid>
+                            </Box>
 
                             {totalPages > 1 && (
                                 <Stack alignItems="center">

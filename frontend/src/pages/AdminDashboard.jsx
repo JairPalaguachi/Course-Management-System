@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
+import { getAdminCourses } from "../services/courseService";
 import {
     Box,
     Button,
@@ -11,6 +12,7 @@ import {
     Card,
     CardContent,
     Grid,
+    CircularProgress,
 } from "@mui/material";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
@@ -20,48 +22,15 @@ import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import GavelIcon from "@mui/icons-material/Gavel";
 import LogoutIcon from "@mui/icons-material/Logout";
+import EditNoteIcon from "@mui/icons-material/EditNote";
 
 // ── Paleta (igual que TutorDashboard / TutorCourses) ──────────────────────────
-const TEAL_DARK  = "#0a2e2b";
-const TEAL_MID   = "#10423f";
-const TEAL       = "#0f766e";
+const TEAL_DARK = "#0a2e2b";
+const TEAL_MID = "#10423f";
+const TEAL = "#0f766e";
 const TEAL_LIGHT = "#f0faf8";
 
-// ── Datos de ejemplo — reemplaza con tu servicio real ─────────────────────────
-const MOCK_PENDING_COURSES = [
-    {
-        id: 1,
-        title: "Introducción a Python para Ciencias de Datos",
-        description: "Aprende los fundamentos de Python con enfoque en análisis de datos y visualización.",
-        tutor: "Carlos Menéndez",
-        submitted_at: "2025-06-18",
-        cover_image: null,
-    },
-    {
-        id: 2,
-        title: "Diseño UX/UI con Figma",
-        description: "Crea interfaces modernas y accesibles usando las mejores herramientas del mercado.",
-        tutor: "María Vásquez",
-        submitted_at: "2025-06-20",
-        cover_image: null,
-    },
-    {
-        id: 3,
-        title: "Redes y Seguridad Informática",
-        description: "Fundamentos de redes TCP/IP, protocolos de seguridad y buenas prácticas.",
-        tutor: "Andrés Quiñónez",
-        submitted_at: "2025-06-21",
-        cover_image: null,
-    },
-    {
-        id: 4,
-        title: "Álgebra Lineal Aplicada",
-        description: "Vectores, matrices y transformaciones lineales con aplicaciones en ingeniería.",
-        tutor: "Luisa Paredes",
-        submitted_at: "2025-06-22",
-        cover_image: null,
-    },
-];
+
 
 const ADMIN_FEATURES = [
     {
@@ -90,12 +59,54 @@ const QUICK_LINKS = [
 function AdminDashboard() {
     const { logout } = useAuth();
     const navigate = useNavigate();
+    const { user } = useAuth();
 
     const handleLogout = () => {
         logout();
         navigate("/login");
     };
-    const [pendingCourses] = useState(MOCK_PENDING_COURSES);
+
+    const [pendingCourses, setPendingCourses] = useState([]);
+    const [publishedCourses, setPublishedCourses] = useState([]);
+    const [loadingPendingCourses, setLoadingPendingCourses] = useState(true);
+    const [pendingCoursesError, setPendingCoursesError] = useState("");
+
+    useEffect(() => {
+        const loadPendingCourses = async () => {
+            try {
+                setLoadingPendingCourses(true);
+                setPendingCoursesError("");
+
+                const data = await getAdminCourses();
+
+                const courses = Array.isArray(data)
+                    ? data
+                    : data?.results ?? [];
+
+                const pending = courses.filter(
+                    (course) => course.status === "pending"
+                );
+
+                const published = courses.filter(
+                    (course) => course.status === "published"
+                );
+
+                setPendingCourses(pending);
+                setPublishedCourses(published);
+            } catch (error) {
+                console.error("Error al cargar cursos pendientes:", error);
+                setPendingCoursesError(
+                    "No se pudieron cargar los cursos pendientes."
+                );
+                setPendingCourses([]);
+                setPublishedCourses([]);
+            } finally {
+                setLoadingPendingCourses(false);
+            }
+        };
+
+        loadPendingCourses();
+    }, []);
 
     return (
         <Box
@@ -139,7 +150,7 @@ function AdminDashboard() {
                     <Box sx={{ position: "absolute", top: 0, right: 16 }}>
                         <Button
                             startIcon={<LogoutIcon />}
-                            onClick= {handleLogout}
+                            onClick={handleLogout}
                             sx={{
                                 color: "rgba(255,255,255,0.7)",
                                 textTransform: "none",
@@ -155,6 +166,22 @@ function AdminDashboard() {
                         >
                             Cerrar sesión
                         </Button>
+
+                        {user?.is_staff && (
+                            <Button
+                                startIcon={<AdminPanelSettingsIcon />}
+                                onClick={() => navigate("/superuser/users")}
+                                sx={{
+                                    color: "rgba(255,255,255,0.7)",
+                                    textTransform: "none",
+                                    fontWeight: 600,
+                                    "&:hover": { color: "#fff", background: "rgba(255,255,255,0.1)" },
+                                }}
+                            >
+                                Panel de superusuario
+                            </Button>
+                        )}
+
                     </Box>
 
                     {/* Ícono de marca */}
@@ -368,39 +395,70 @@ function AdminDashboard() {
                         />
                     </Stack>
 
-                    {pendingCourses.length === 0 ? (
+                    {loadingPendingCourses ? (
+                        <Box sx={{ display: "grid", placeItems: "center", minHeight: 220 }}>
+                            <Stack alignItems="center" spacing={2}>
+                                <CircularProgress sx={{ color: TEAL }} />
+                                <Typography sx={{ color: TEAL, fontWeight: 600 }}>
+                                    Cargando cursos pendientes...
+                                </Typography>
+                            </Stack>
+                        </Box>
+                    ) : pendingCoursesError ? (
+                        <Box
+                            sx={{
+                                backgroundColor: "#fef2f2",
+                                border: "1px solid #fecaca",
+                                borderRadius: 3,
+                                p: 3,
+                                color: "#b91c1c",
+                            }}
+                        >
+                            {pendingCoursesError}
+                        </Box>
+                    ) : pendingCourses.length === 0 ? (
                         <Box sx={{ textAlign: "center", py: 10 }}>
-                            <CheckCircleOutlineIcon sx={{ fontSize: 64, color: "#86efac", mb: 2 }} />
+                            <CheckCircleOutlineIcon
+                                sx={{ fontSize: 64, color: "#86efac", mb: 2 }}
+                            />
                             <Typography variant="h6" sx={{ color: "#64748b" }}>
                                 No hay cursos pendientes de revisión. ¡Todo al día!
                             </Typography>
                         </Box>
                     ) : (
-                        <Grid container spacing={4}>
+                        <Grid container spacing={3}>
                             {pendingCourses.map((course) => (
-                                <Grid xs={12} sm={6} md={4} lg={3} key={course.id}>
+                                <Grid
+                                    item
+                                    xs={12}
+                                    sm={6}
+                                    md={4}
+                                    lg={3}
+                                    key={course.id}
+                                >
                                     <Card
                                         sx={{
-                                            maxWidth: 350,
-                                            width: "100%",
-                                            margin: "0 auto",
                                             borderRadius: 4,
                                             overflow: "hidden",
                                             height: "100%",
                                             display: "flex",
                                             flexDirection: "column",
+                                            maxWidth: 260,
+                                            width: "100%",
+                                            margin: "0 auto",
                                             border: "1px solid #e2e8f0",
                                             transition: "all 0.25s ease",
                                             "&:hover": {
                                                 transform: "translateY(-6px)",
-                                                boxShadow: "0 16px 40px rgba(15,118,110,0.15)",
+                                                boxShadow:
+                                                    "0 16px 40px rgba(15,118,110,0.15)",
                                             },
                                         }}
                                     >
-                                        {/* Imagen / placeholder */}
+                                        {/* Imagen */}
                                         <Box
                                             sx={{
-                                                height: 160,
+                                                height: 140,
                                                 backgroundImage: course.cover_image
                                                     ? `url(${course.cover_image})`
                                                     : `linear-gradient(145deg, ${TEAL_DARK}, ${TEAL})`,
@@ -412,12 +470,25 @@ function AdminDashboard() {
                                             }}
                                         >
                                             {!course.cover_image && (
-                                                <SchoolIcon sx={{ fontSize: 60, color: "#fff" }} />
+                                                <SchoolIcon
+                                                    sx={{
+                                                        fontSize: 52,
+                                                        color: "#fff",
+                                                        opacity: 0.85,
+                                                    }}
+                                                />
                                             )}
                                         </Box>
 
-                                        <CardContent sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
-                                            {/* Badge de estado */}
+                                        <CardContent
+                                            sx={{
+                                                flexGrow: 1,
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                p: 2.5,
+                                            }}
+                                        >
+                                            {/* Estado */}
                                             <Chip
                                                 label="En revisión"
                                                 size="small"
@@ -442,7 +513,8 @@ function AdminDashboard() {
                                                     display: "-webkit-box",
                                                     WebkitLineClamp: 2,
                                                     WebkitBoxOrient: "vertical",
-                                                    minHeight: 56,
+                                                    minHeight: 52,
+                                                    fontSize: "0.95rem",
                                                 }}
                                             >
                                                 {course.title}
@@ -452,46 +524,58 @@ function AdminDashboard() {
                                             <Typography
                                                 sx={{
                                                     color: "#64748b",
-                                                    fontSize: "0.875rem",
+                                                    fontSize: "0.82rem",
                                                     mb: 1.5,
                                                     display: "-webkit-box",
                                                     WebkitLineClamp: 2,
                                                     WebkitBoxOrient: "vertical",
                                                     overflow: "hidden",
-                                                    minHeight: 42,
+                                                    minHeight: 38,
                                                 }}
                                             >
-                                                {course.description || "Sin descripción disponible"}
+                                                {course.description ||
+                                                    "Sin descripción disponible."}
                                             </Typography>
 
-                                            {/* Meta: tutor y fecha */}
-                                            <Stack spacing={0.25} sx={{ mb: 2 }}>
-                                                <Typography sx={{ fontSize: "0.78rem", color: "#94a3b8" }}>
-                                                    Tutor: <strong style={{ color: "#475569" }}>{course.tutor}</strong>
-                                                </Typography>
-                                                <Typography sx={{ fontSize: "0.78rem", color: "#94a3b8" }}>
-                                                    Enviado: {course.submitted_at}
-                                                </Typography>
-                                            </Stack>
-
-                                            {/* Acciones */}
-                                            <Stack spacing={1} sx={{ mt: "auto" }}>
-                                                <Button
-                                                    fullWidth
-                                                    variant="contained"
-                                                    startIcon={<CheckCircleOutlineIcon />}
-                                                    onClick={() => navigate(`/admin/courses/${course.id}/review`)}
+                                            {/* Tutor */}
+                                            {course.tutor_username && (
+                                                <Typography
                                                     sx={{
-                                                        backgroundColor: TEAL,
-                                                        textTransform: "none",
-                                                        fontWeight: 700,
-                                                        borderRadius: 3,
-                                                        "&:hover": { backgroundColor: TEAL_MID },
+                                                        fontSize: "0.78rem",
+                                                        color: "#94a3b8",
+                                                        mb: 2,
                                                     }}
                                                 >
-                                                    Revisar curso
-                                                </Button>
-                                            </Stack>
+                                                    Tutor:{" "}
+                                                    <strong style={{ color: "#475569" }}>
+                                                        {course.tutor_username}
+                                                    </strong>
+                                                </Typography>
+                                            )}
+
+                                            {/* Botón */}
+                                            <Button
+                                                fullWidth
+                                                variant="contained"
+                                                startIcon={<CheckCircleOutlineIcon />}
+                                                onClick={() =>
+                                                    navigate(
+                                                        `/admin/courses/${course.id}/review`
+                                                    )
+                                                }
+                                                sx={{
+                                                    mt: "auto",
+                                                    backgroundColor: TEAL,
+                                                    textTransform: "none",
+                                                    fontWeight: 700,
+                                                    borderRadius: 3,
+                                                    "&:hover": {
+                                                        backgroundColor: TEAL_MID,
+                                                    },
+                                                }}
+                                            >
+                                                Revisar curso
+                                            </Button>
                                         </CardContent>
                                     </Card>
                                 </Grid>
@@ -500,6 +584,238 @@ function AdminDashboard() {
                     )}
                 </Container>
             </Box>
+
+            {/* ── Listado de cursos publicados ─────────────────────────────── */}
+            <Box
+                id="published-courses-section"
+                sx={{
+                    backgroundColor: TEAL_LIGHT,
+                    py: { xs: 7, md: 10 },
+                    width: "100%",
+                }}
+            >
+                <Container maxWidth="lg">
+                    <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        alignItems={{ xs: "flex-start", sm: "center" }}
+                        justifyContent="space-between"
+                        spacing={2}
+                        sx={{ mb: 5 }}
+                    >
+                        <Box>
+                            <Typography
+                                variant="h4"
+                                sx={{
+                                    fontWeight: 700,
+                                    color: TEAL_MID,
+                                    mb: 0.5,
+                                }}
+                            >
+                                Cursos Publicados
+                            </Typography>
+
+                            <Typography sx={{ color: "#64748b" }}>
+                                {publishedCourses.length} curso
+                                {publishedCourses.length !== 1 ? "s" : ""} publicado
+                                {publishedCourses.length !== 1 ? "s" : ""}
+                            </Typography>
+                        </Box>
+
+                        <Chip
+                            icon={<CheckCircleOutlineIcon sx={{ fontSize: 16 }} />}
+                            label={`${publishedCourses.length} publicados`}
+                            sx={{
+                                backgroundColor: "#dcfce7",
+                                color: "#15803d",
+                                fontWeight: 700,
+                                fontSize: "0.85rem",
+                                px: 1,
+                            }}
+                        />
+                    </Stack>
+
+                    {publishedCourses.length === 0 ? (
+                        <Box sx={{ textAlign: "center", py: 8 }}>
+                            <SchoolIcon
+                                sx={{
+                                    fontSize: 56,
+                                    color: "#94a3b8",
+                                    mb: 2,
+                                }}
+                            />
+
+                            <Typography
+                                variant="h6"
+                                sx={{ color: "#64748b" }}
+                            >
+                                No hay cursos publicados todavía.
+                            </Typography>
+                        </Box>
+                    ) : (
+                        <Grid container spacing={3}>
+                            {publishedCourses.map((course) => (
+                                <Grid
+                                    item
+                                    xs={12}
+                                    sm={6}
+                                    md={4}
+                                    lg={3}
+                                    key={course.id}
+                                >
+                                    <Card
+                                        sx={{
+                                            borderRadius: 4,
+                                            overflow: "hidden",
+                                            height: "100%",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            maxWidth: 260,
+                                            width: "100%",
+                                            margin: "0 auto",
+                                            border: "1px solid #e2e8f0",
+                                            transition: "all 0.25s ease",
+                                            "&:hover": {
+                                                transform: "translateY(-6px)",
+                                                boxShadow:
+                                                    "0 16px 40px rgba(15,118,110,0.15)",
+                                            },
+                                        }}
+                                    >
+                                        {/* Imagen */}
+                                        <Box
+                                            sx={{
+                                                height: 140,
+                                                backgroundImage: course.cover_image
+                                                    ? `url(${course.cover_image})`
+                                                    : `linear-gradient(145deg, ${TEAL_DARK}, ${TEAL})`,
+                                                backgroundSize: "cover",
+                                                backgroundPosition: "center",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                            }}
+                                        >
+                                            {!course.cover_image && (
+                                                <SchoolIcon
+                                                    sx={{
+                                                        fontSize: 52,
+                                                        color: "#fff",
+                                                        opacity: 0.85,
+                                                    }}
+                                                />
+                                            )}
+                                        </Box>
+
+                                        <CardContent
+                                            sx={{
+                                                flexGrow: 1,
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                p: 2.5,
+                                            }}
+                                        >
+                                            {/* Estado */}
+                                            <Chip
+                                                label="Publicado"
+                                                size="small"
+                                                sx={{
+                                                    backgroundColor: "#dcfce7",
+                                                    color: "#15803d",
+                                                    fontWeight: 700,
+                                                    mb: 1.5,
+                                                    alignSelf: "flex-start",
+                                                }}
+                                            />
+
+                                            {/* Título */}
+                                            <Typography
+                                                variant="h6"
+                                                sx={{
+                                                    fontWeight: 700,
+                                                    color: TEAL_DARK,
+                                                    mb: 0.75,
+                                                    overflow: "hidden",
+                                                    textOverflow: "ellipsis",
+                                                    display: "-webkit-box",
+                                                    WebkitLineClamp: 2,
+                                                    WebkitBoxOrient: "vertical",
+                                                    minHeight: 52,
+                                                    fontSize: "0.95rem",
+                                                }}
+                                            >
+                                                {course.title}
+                                            </Typography>
+
+                                            {/* Descripción */}
+                                            <Typography
+                                                sx={{
+                                                    color: "#64748b",
+                                                    fontSize: "0.82rem",
+                                                    mb: 1.5,
+                                                    display: "-webkit-box",
+                                                    WebkitLineClamp: 2,
+                                                    WebkitBoxOrient: "vertical",
+                                                    overflow: "hidden",
+                                                    minHeight: 38,
+                                                }}
+                                            >
+                                                {course.description ||
+                                                    "Sin descripción disponible."}
+                                            </Typography>
+
+                                            {/* Tutor */}
+                                            {course.tutor_username && (
+                                                <Typography
+                                                    sx={{
+                                                        fontSize: "0.78rem",
+                                                        color: "#94a3b8",
+                                                        mb: 2,
+                                                    }}
+                                                >
+                                                    Tutor:{" "}
+                                                    <strong
+                                                        style={{
+                                                            color: "#475569",
+                                                        }}
+                                                    >
+                                                        {course.tutor_username}
+                                                    </strong>
+                                                </Typography>
+                                            )}
+
+                                            {/* Botón */}
+                                            <Button
+                                                fullWidth
+                                                variant="contained"
+                                                startIcon={<EditNoteIcon />}
+                                                onClick={() =>
+                                                    navigate(
+                                                        `/admin/courses/edit/${course.id}`
+                                                    )
+                                                }
+                                                sx={{
+                                                    mt: "auto",
+                                                    backgroundColor: TEAL,
+                                                    textTransform: "none",
+                                                    fontWeight: 700,
+                                                    borderRadius: 3,
+                                                    "&:hover": {
+                                                        backgroundColor: TEAL_MID,
+                                                    },
+                                                }}
+                                            >
+                                                Gestionar curso
+                                            </Button>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+                            ))}
+                        </Grid>
+                    )}
+                </Container>
+            </Box>
+
+
 
             {/* ── Banner CTA: ir a usuarios ─────────────────────────────────── */}
             <Box
@@ -538,7 +854,8 @@ function AdminDashboard() {
                     </Button>
                 </Container>
             </Box>
-
+            
+            
             {/* ── Footer ───────────────────────────────────────────────────── */}
             <Box sx={{ backgroundColor: TEAL_DARK, py: 2.5, textAlign: "center", width: "100%" }}>
                 <Typography sx={{ color: "rgba(255,255,255,0.35)", fontSize: "0.78rem" }}>

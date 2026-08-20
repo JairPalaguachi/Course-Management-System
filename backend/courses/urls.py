@@ -1,12 +1,21 @@
 from django.urls import path
 from .views import (
+    AdminCourseListView,
+    AdminSectionContentUploadView,
+    AdminCourseApproveView,
+    AdminCourseRejectView,
     PublicCourseListView,
     TutorCourseCreateView,
     SectionContentUploadView,
     CategoryListView,
+    admin_upload_course_cover,
     upload_course_cover,
     TutorCourseDetailView,
     TutorCoursesListView,
+    AdminCourseUpdateView,
+    StudentCourseDetailView,
+    AdminCategoryListCreateView,
+    AdminCategoryDetailView
 )
 
 urlpatterns = [
@@ -16,6 +25,12 @@ urlpatterns = [
         name="public-courses",
     ),
 
+    path(
+        "student/courses/<int:pk>/",
+        StudentCourseDetailView.as_view(),
+        name="student-course-detail",
+    ),
+    
     path(
         "tutor/courses/",
         TutorCourseCreateView.as_view(),
@@ -51,4 +66,30 @@ urlpatterns = [
         TutorCoursesListView.as_view(),
         name="tutor-courses-list",
     ),
+
+    path(
+        "admin/courses/<int:pk>/",
+        AdminCourseUpdateView.as_view(),
+        name="admin-course-update",
+    ),
+
+    path('admin/courses/', AdminCourseListView.as_view(), name='admin-course-list'),
+    path('admin/contents/<int:content_id>/upload/', AdminSectionContentUploadView.as_view()),
+    path('admin/courses/<int:pk>/upload-cover/', admin_upload_course_cover),
+
+    path(
+        "admin/courses/<int:pk>/approve/",
+        AdminCourseApproveView.as_view(),
+        name="admin-course-approve",
+    ),
+
+    path(
+        "admin/courses/<int:pk>/reject/",
+        AdminCourseRejectView.as_view(),
+        name="admin-course-reject",
+    ),
+
+
+    path('admin/categories/', AdminCategoryListCreateView.as_view(), name='admin-category-list-create'),
+    path('admin/categories/<int:pk>/', AdminCategoryDetailView.as_view(), name='admin-category-detail'),
 ]

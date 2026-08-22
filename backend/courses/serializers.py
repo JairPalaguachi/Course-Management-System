@@ -72,14 +72,6 @@ class SectionContentSerializer(serializers.ModelSerializer):
             return None
         return os.path.basename(obj.file.name)
 
-    def get_file_url(self, obj):
-        request = self.context.get("request")
-        if not obj.file:
-            return None
-        if request:
-            return request.build_absolute_uri(obj.file.url)
-        return obj.file.url
-
 
 class SectionEvaluationSerializer(serializers.ModelSerializer):
     class Meta:

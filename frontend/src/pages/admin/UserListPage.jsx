@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import PropTypes from "prop-types";
 import { getUsers } from "../../services/userService";
 import {
   Box,
@@ -81,6 +82,7 @@ export default function UserListPage() {
   const [roleFilter, setRoleFilter] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const userCountLabel = `${users.length} usuario${users.length === 1 ? "" : "s"} encontrado${users.length === 1 ? "" : "s"}`;
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -198,9 +200,7 @@ export default function UserListPage() {
               pl: "64px",
             }}
           >
-            {loading
-              ? "Cargando…"
-              : `${users.length} usuario${users.length !== 1 ? "s" : ""} encontrado${users.length !== 1 ? "s" : ""}`}
+            {loading ? "Cargando…" : userCountLabel}
           </Typography>
         </Container>
       </Box>
@@ -390,3 +390,7 @@ export default function UserListPage() {
     </Box>
   );
 }
+
+RoleBadge.propTypes = { role: PropTypes.string.isRequired };
+
+StatusBadge.propTypes = { active: PropTypes.bool.isRequired };

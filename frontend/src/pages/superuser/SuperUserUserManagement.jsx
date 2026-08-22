@@ -139,7 +139,7 @@ function SuperUserUserManagement() {
 
     useEffect(() => {
         const timeout = setTimeout(() => {
-            void refreshCategories();
+            refreshCategories().catch(() => {});
         }, 0);
 
         return () => clearTimeout(timeout);
@@ -381,8 +381,8 @@ function SuperUserUserManagement() {
                                             <TableCell>
                                                 <Chip label={ROLES.find((r) => r.value === u.role)?.label || u.role} size="small"
                                                     sx={{
-                                                        backgroundColor: (ROLE_CHIP[u.role] || {}).bg || '#f1f5f9',
-                                                        color: (ROLE_CHIP[u.role] || {}).color || '#475569', fontWeight: 600
+                                                        backgroundColor: ROLE_CHIP[u.role]?.bg || '#f1f5f9',
+                                                        color: ROLE_CHIP[u.role]?.color || '#475569', fontWeight: 600
                                                     }} />
                                             </TableCell>
                                             <TableCell>

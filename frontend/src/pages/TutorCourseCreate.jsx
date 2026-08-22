@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import PropTypes from 'prop-types';
 import {
     Box, Button, Card, CardContent, Chip, CircularProgress,
     Container, FormControl, Grid,
     IconButton, InputLabel, LinearProgress, MenuItem, Select,
     Stack, TextField, Tooltip, Typography, CssBaseline,
+    Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -21,16 +23,8 @@ import SendIcon from '@mui/icons-material/Send';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import UploadIcon from '@mui/icons-material/Upload';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
-import {
-    Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions 
-} from '@mui/material';
-
 import FileUploader from '../components/FileUploader';
 import { createTutorCourse, updateTutorCourse, getCategories, uploadCourseCover } from '../services/courseService';
-
-import { useEffect } from 'react';
-
-
 
 const TEAL_DARK = '#0a2e2b';
 const TEAL_MID = '#10423f';
@@ -101,6 +95,34 @@ function makeContent(type) {
     return { id: _contentId++, type, label: labels[type] };
 }
 
+function findSavedSection(localSection, savedSections) {
+    return savedSections.find(
+        (savedSection) => savedSection.name.trim().toLowerCase() === localSection.name.trim().toLowerCase()
+    );
+}
+
+function mergeSavedContent(localContent, savedSection) {
+    const savedContent = savedSection?.contents?.find(
+        (content) => content.type === localContent.type && content.label === localContent.label
+    );
+
+    return {
+        ...localContent,
+        savedId: savedContent?.id ?? localContent.savedId ?? null,
+        file_url: savedContent?.file_url ?? localContent.file_url ?? null,
+    };
+}
+
+function mergeSavedSection(localSection, savedSections) {
+    const savedSection = findSavedSection(localSection, savedSections);
+
+    return {
+        ...localSection,
+        id: savedSection?.id ?? localSection.id,
+        contents: localSection.contents.map((content) => mergeSavedContent(content, savedSection)),
+    };
+}
+
 
 function SideLabel({ text }) {
     return (
@@ -109,6 +131,8 @@ function SideLabel({ text }) {
         </Typography>
     );
 }
+
+SideLabel.propTypes = { text: PropTypes.string.isRequired };
 
 
 function ProgressSidebar({ formData, hasCover }) {
@@ -152,6 +176,16 @@ function ProgressSidebar({ formData, hasCover }) {
         </Card>
     );
 }
+
+ProgressSidebar.propTypes = {
+    formData: PropTypes.shape({
+        title: PropTypes.string.isRequired,
+        description: PropTypes.string.isRequired,
+        category: PropTypes.string.isRequired,
+        duration: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    }).isRequired,
+    hasCover: PropTypes.bool.isRequired,
+};
 
 
 
@@ -272,6 +306,21 @@ function SectionEditor({ section, index, onChange, onRemove }) {
     );
 }
 
+SectionEditor.propTypes = {
+    section: PropTypes.shape({
+        name: PropTypes.string.isRequired,
+        open: PropTypes.bool.isRequired,
+        contents: PropTypes.arrayOf(PropTypes.shape({
+            id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+            type: PropTypes.string.isRequired,
+            label: PropTypes.string.isRequired,
+        })).isRequired,
+    }).isRequired,
+    index: PropTypes.number.isRequired,
+    onChange: PropTypes.func.isRequired,
+    onRemove: PropTypes.func.isRequired,
+};
+
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 function TutorCourseCreate() {
@@ -333,7 +382,7 @@ function TutorCourseCreate() {
     useEffect(() => {
         return () => {
         //  Si entramos a la ruta de creación pura, limpiamos CUALQUIER residuo viejo del tirón
-            if (window.location.pathname.includes('/tutor/courses/create')) {
+            if (globalThis.location.pathname.includes('/tutor/courses/create')) {
                 sessionStorage.removeItem('courseDraft');
             }
         };
@@ -448,29 +497,7 @@ function TutorCourseCreate() {
             const savedSections = savedCourse.sections ?? [];
 
             setSections((prevSections) =>
-                prevSections.map((localSec) => {
-                    // Buscamos la sección en la DB que coincida por nombre
-                    const dbSec = savedSections.find(
-                        (ds) => ds.name.trim().toLowerCase() === localSec.name.trim().toLowerCase()
-                    );
-
-                    return {
-                        ...localSec,
-                        id: dbSec?.id ?? localSec.id,
-                        contents: localSec.contents.map((localContent) => {
-                            // Buscamos el contenido que coincida en tipo y label
-                            const dbContent = dbSec?.contents?.find(
-                                (dc) => dc.type === localContent.type && dc.label === localContent.label
-                            );
-
-                            return {
-                                ...localContent,
-                                savedId: dbContent?.id ?? localContent.savedId ?? null,
-                                file_url: dbContent?.file_url ?? localContent.file_url ?? null
-                            };
-                        }),
-                    };
-                })
+                prevSections.map((localSection) => mergeSavedSection(localSection, savedSections))
             );
 
             // 3. Mostramos mensaje de éxito correspondiente

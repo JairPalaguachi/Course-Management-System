@@ -54,11 +54,11 @@ function StudentCourseDetail() {
                 const match = (Array.isArray(data) ? data : []).find(
                     (item) => String(item?.course?.id) === String(courseId)
                 );
-                if (!match) {
+                if (match) {
+                    setEnrollment(match);
+                } else {
                     setError("No encontramos este curso en tu historial de inscripciones.");
                     setEnrollment(null);
-                } else {
-                    setEnrollment(match);
                 }
             } catch {
                 if (!active) return;

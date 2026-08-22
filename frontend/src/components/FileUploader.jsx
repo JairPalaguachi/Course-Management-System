@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import PropTypes from 'prop-types';
 import {
   Box, Button, CircularProgress, IconButton,
   LinearProgress, Typography,
@@ -152,3 +153,10 @@ export default function FileUploader({ contentId, contentType, onUploaded, uploa
     </Box>
   );
 }
+
+FileUploader.propTypes = {
+  contentId: PropTypes.number,
+  contentType: PropTypes.string.isRequired,
+  onUploaded: PropTypes.func,
+  uploadFn: PropTypes.func,
+};

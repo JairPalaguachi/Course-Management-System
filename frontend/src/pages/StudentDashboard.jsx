@@ -54,7 +54,8 @@ const getMediaUrl = (url) => {
 
     const backendUrl = apiUrl.replace(/\/api\/?$/, "");
 
-    return `${backendUrl}${url.startsWith("/") ? url : `/${url}`}`;
+    const mediaPath = url.startsWith("/") ? url : `/${url}`;
+    return backendUrl + mediaPath;
 };
 // ── Opciones de filtros (mismo esquema que Courses.jsx) ───────────────────────
 const PAGE_SIZE = 9;
@@ -942,7 +943,7 @@ useEffect(() => {
                         </Alert>
                     )}
 
-                    {loadingEnrollments ? (
+                    {loadingEnrollments && (
                         <Box sx={{ display: "grid", placeItems: "center", minHeight: 200 }}>
                             <Stack alignItems="center" spacing={2}>
                                 <CircularProgress sx={{ color: TEAL }} />
@@ -951,7 +952,8 @@ useEffect(() => {
                                 </Typography>
                             </Stack>
                         </Box>
-                    ) : enrollments.length === 0 ? (
+                    )}
+                    {!loadingEnrollments && enrollments.length === 0 && (
                         <Box sx={{ textAlign: "center", py: 10 }}>
                             <MenuBookIcon sx={{ fontSize: 64, color: "#94a3b8", mb: 2 }} />
                             <Typography variant="h6" sx={{ color: "#64748b", mb: 1 }}>
@@ -978,7 +980,8 @@ useEffect(() => {
                                 Explorar catálogo
                             </Button>
                         </Box>
-                    ) : (
+                    )}
+                    {!loadingEnrollments && enrollments.length > 0 && (
                         <Box
                             sx={{
                                 display: "grid",
@@ -1033,7 +1036,7 @@ useEffect(() => {
                                 Catálogo de Cursos
                             </Typography>
                             <Typography sx={{ color: "#64748b" }}>
-                                {loadingCatalog ? "Buscando..." : `${totalCount} curso${totalCount !== 1 ? "s" : ""} disponible${totalCount !== 1 ? "s" : ""}`}
+                                {loadingCatalog ? "Buscando..." : availableCoursesLabel}
                             </Typography>
                         </Box>
                         <Chip
@@ -1095,7 +1098,7 @@ useEffect(() => {
                     )}
 
                     {/* Contenido del catálogo */}
-                    {loadingCatalog ? (
+                    {loadingCatalog && (
                         <Box sx={{ display: "grid", placeItems: "center", minHeight: 260 }}>
                             <Stack alignItems="center" spacing={2}>
                                 <CircularProgress sx={{ color: TEAL }} />
@@ -1104,7 +1107,8 @@ useEffect(() => {
                                 </Typography>
                             </Stack>
                         </Box>
-                    ) : catalogCourses.length === 0 ? (
+                    )}
+                    {!loadingCatalog && catalogCourses.length === 0 && (
                         <Box sx={{ textAlign: "center", py: 8 }}>
                             <AutoStoriesIcon sx={{ fontSize: 64, color: "#94a3b8", mb: 2 }} />
                             <Typography variant="h6" sx={{ color: "#64748b" }}>
@@ -1114,7 +1118,8 @@ useEffect(() => {
                                 Prueba cambiando el texto de búsqueda, el nivel o la duración.
                             </Typography>
                         </Box>
-                    ) : (
+                    )}
+                    {!loadingCatalog && catalogCourses.length > 0 && (
                         <>
                             {/* Contenido del catálogo con CSS Grid */}
                             <Box

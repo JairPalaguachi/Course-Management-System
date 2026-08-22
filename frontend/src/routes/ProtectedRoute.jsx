@@ -1,4 +1,5 @@
 import { Navigate } from "react-router-dom";
+import PropTypes from "prop-types";
 import { useAuth } from "../context/useAuth";
 
 function ProtectedRoute({ children, allowedRole, requireStaff }) {
@@ -18,5 +19,11 @@ function ProtectedRoute({ children, allowedRole, requireStaff }) {
 
     return children;
 }
+
+ProtectedRoute.propTypes = {
+    children: PropTypes.node.isRequired,
+    allowedRole: PropTypes.string,
+    requireStaff: PropTypes.bool,
+};
 
 export default ProtectedRoute;

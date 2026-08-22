@@ -70,6 +70,37 @@ function AdminDashboard() {
     const [publishedCourses, setPublishedCourses] = useState([]);
     const [loadingPendingCourses, setLoadingPendingCourses] = useState(true);
     const [pendingCoursesError, setPendingCoursesError] = useState("");
+    const pendingCourseLabel = `${pendingCourses.length} curso${pendingCourses.length === 1 ? "" : "s"} esperando aprobación`;
+    const publishedCourseLabel = `${publishedCourses.length} curso${publishedCourses.length === 1 ? "" : "s"} publicado${publishedCourses.length === 1 ? "" : "s"}`;
+
+    let pendingCoursesContent;
+    if (loadingPendingCourses) {
+        pendingCoursesContent = (
+            <Box sx={{ display: "grid", placeItems: "center", minHeight: 220 }}>
+                <Stack alignItems="center" spacing={2}>
+                    <CircularProgress sx={{ color: TEAL }} />
+                    <Typography sx={{ color: TEAL, fontWeight: 600 }}>
+                        Cargando cursos pendientes...
+                    </Typography>
+                </Stack>
+            </Box>
+        );
+    } else if (pendingCoursesError) {
+        pendingCoursesContent = (
+            <Box sx={{ backgroundColor: "#fef2f2", border: "1px solid #fecaca", borderRadius: 3, p: 3, color: "#b91c1c" }}>
+                {pendingCoursesError}
+            </Box>
+        );
+    } else if (pendingCourses.length === 0) {
+        pendingCoursesContent = (
+            <Box sx={{ textAlign: "center", py: 10 }}>
+                <CheckCircleOutlineIcon sx={{ fontSize: 64, color: "#86efac", mb: 2 }} />
+                <Typography variant="h6" sx={{ color: "#64748b" }}>
+                    No hay cursos pendientes de revisión. ¡Todo al día!
+                </Typography>
+            </Box>
+        );
+    }
 
     useEffect(() => {
         const loadPendingCourses = async () => {
@@ -378,7 +409,7 @@ function AdminDashboard() {
                                 Cursos Pendientes de Revisión
                             </Typography>
                             <Typography sx={{ color: "#64748b" }}>
-                                {pendingCourses.length} curso{pendingCourses.length !== 1 ? "s" : ""} esperando aprobación
+                                {pendingCourseLabel}
                             </Typography>
                         </Box>
 
@@ -395,37 +426,7 @@ function AdminDashboard() {
                         />
                     </Stack>
 
-                    {loadingPendingCourses ? (
-                        <Box sx={{ display: "grid", placeItems: "center", minHeight: 220 }}>
-                            <Stack alignItems="center" spacing={2}>
-                                <CircularProgress sx={{ color: TEAL }} />
-                                <Typography sx={{ color: TEAL, fontWeight: 600 }}>
-                                    Cargando cursos pendientes...
-                                </Typography>
-                            </Stack>
-                        </Box>
-                    ) : pendingCoursesError ? (
-                        <Box
-                            sx={{
-                                backgroundColor: "#fef2f2",
-                                border: "1px solid #fecaca",
-                                borderRadius: 3,
-                                p: 3,
-                                color: "#b91c1c",
-                            }}
-                        >
-                            {pendingCoursesError}
-                        </Box>
-                    ) : pendingCourses.length === 0 ? (
-                        <Box sx={{ textAlign: "center", py: 10 }}>
-                            <CheckCircleOutlineIcon
-                                sx={{ fontSize: 64, color: "#86efac", mb: 2 }}
-                            />
-                            <Typography variant="h6" sx={{ color: "#64748b" }}>
-                                No hay cursos pendientes de revisión. ¡Todo al día!
-                            </Typography>
-                        </Box>
-                    ) : (
+                    {pendingCoursesContent || (
                         <Grid container spacing={3}>
                             {pendingCourses.map((course) => (
                                 <Grid
@@ -615,9 +616,7 @@ function AdminDashboard() {
                             </Typography>
 
                             <Typography sx={{ color: "#64748b" }}>
-                                {publishedCourses.length} curso
-                                {publishedCourses.length !== 1 ? "s" : ""} publicado
-                                {publishedCourses.length !== 1 ? "s" : ""}
+                                {publishedCourseLabel}
                             </Typography>
                         </Box>
 

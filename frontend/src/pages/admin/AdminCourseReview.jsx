@@ -1109,6 +1109,7 @@ function ContentItem({ content }) {
                         }}
                         src={content.file_url}
                     >
+                        <track kind="captions" src="data:text/vtt,WEBVTT%0A%0A" srcLang="es" label="Español" />
                         Tu navegador no soporta la reproducción de video.
                     </video>
                 </Box>

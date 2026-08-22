@@ -3,6 +3,7 @@ import {
     IconButton, InputLabel, LinearProgress, MenuItem, Select,
     Stack, Switch, TextField, Tooltip, Typography, Card, CardContent,
 } from '@mui/material';
+import PropTypes from 'prop-types';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DeleteOutlineIcon from '@mui/icons-material/Delete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
@@ -318,3 +319,43 @@ export function SectionEditor({ section, index, onChange, onRemove, uploadFn,sho
         </Box>
     );
 }
+
+SideLabel.propTypes = { text: PropTypes.string.isRequired };
+
+ProgressSidebar.propTypes = {
+    formData: PropTypes.shape({
+        title: PropTypes.string.isRequired,
+        description: PropTypes.string.isRequired,
+        category: PropTypes.string.isRequired,
+        duration: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    }).isRequired,
+    hasCover: PropTypes.bool.isRequired,
+};
+
+SectionEditor.propTypes = {
+    section: PropTypes.shape({
+        name: PropTypes.string.isRequired,
+        open: PropTypes.bool.isRequired,
+        hasEval: PropTypes.bool,
+        eval: PropTypes.shape({
+            name: PropTypes.string,
+            maxScore: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+            minScore: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+            attempts: PropTypes.string,
+            instructions: PropTypes.string,
+        }),
+        contents: PropTypes.arrayOf(PropTypes.shape({
+            id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+            type: PropTypes.string.isRequired,
+            label: PropTypes.string.isRequired,
+            savedId: PropTypes.number,
+            file_url: PropTypes.string,
+            file_name: PropTypes.string,
+        })).isRequired,
+    }).isRequired,
+    index: PropTypes.number.isRequired,
+    onChange: PropTypes.func.isRequired,
+    onRemove: PropTypes.func.isRequired,
+    uploadFn: PropTypes.func,
+    showEvaluation: PropTypes.bool,
+};
